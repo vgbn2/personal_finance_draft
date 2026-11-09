@@ -20,7 +20,7 @@ storage/
 
 1. **Binary Time-Series Index (`storage/data/ts/`):**
    - High-speed 48-byte packed Float64 candle binary storage (`{SYMBOL}_{TIMEFRAME}.bin`).
-   - Managed by: `shared/lib/market/ts_index_storage.js` and `backend/core/src/data/binary_ts_reader.cpp`.
+   - Managed by: `shared/lib/market/ts_index_storage.js` and `backend/cpp_core/src/data/binary_ts_reader.cpp`.
 
 2. **Market Data Cache (`storage/data/cache/`):**
    - Partitioned by asset class (`cache/crypto/*.json`, `cache/equities/*.json`, `cache/fx/*.json`).
@@ -31,7 +31,7 @@ storage/
 
 4. **Paper Trading Persistence (`storage/data/paper_trading/`):**
    - Immutable checksum-chained paper execution event ledger.
-   - Managed by: `backend/gateway/src/paper_ledger.js`.
+   - Managed by: `backend/execution/src/paper_ledger.js`.
 
 ## Code Atlas Cross-References
 

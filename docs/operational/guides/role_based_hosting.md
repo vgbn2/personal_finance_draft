@@ -123,7 +123,7 @@ SOVEREIGN_IP_CHANGE_POLICY=audit
 SOVEREIGN_TRUST_PROXY=false
 ```
 
-The registry is stored at `storage/runtime/auth_sessions.json` by default with owner-only mode. It stores:
+The registry is stored at `storage/runtime/.../auth_sessions.json` by default with owner-only mode. It stores:
 
 - a one-way session fingerprint, never the token;
 - principal ID, identity type, and role;

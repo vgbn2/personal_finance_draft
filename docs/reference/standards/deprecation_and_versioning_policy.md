@@ -45,7 +45,7 @@ All runtime deprecation warnings emit structured log frames containing an offici
 | `SOV_DEP_002` | Environment Config | Unscoped credentials (`ALPACA_API_KEY`); migrate to scoped `ALPACA_PAPER_*` or `ALPACA_LIVE_*` |
 | `SOV_DEP_003` | Storage Concurrency | Unlocked direct file writes; migrate to `withFileLockSync` with POSIX `O_EXCL` locks |
 | `SOV_DEP_004` | Indicators | Legacy indicator positional parameters; migrate to standard `{ symbol, timeframe, period }` options |
-| `SOV_DEP_005` | CLI Commands | Deprecated legacy CLI command aliases; migrate to canonical command keys in `tui/manifest.js` |
+| `SOV_DEP_005` | CLI Commands | Deprecated legacy CLI command aliases; migrate to canonical command keys in `frontend/cli-tui/tui/manifest.js` |
 
 ---
 
@@ -60,4 +60,4 @@ High-density binary time-series files (`storage/data/ts/*.bin`) represent immuta
 2. **Backward-Compatible Readers**:
    - The C++ reader (`BinaryTsReader`) and JS storage adapter (`ts_index_storage.js`) must preserve read support for older format versions for at least one major release.
 3. **Migration Utilities**:
-   - Any schema revision must ship an in-place migration utility (`scripts/tools/migrate_ts_format.js`) that validates file checksums before replacing legacy binary archives.
+   - Any schema revision must ship an in-place migration utility (`tools/dev/.../migrate_ts_format.js`) that validates file checksums before replacing legacy binary archives.

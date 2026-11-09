@@ -36,7 +36,7 @@ test('fill reducer keeps only unsold shares and leaves valuation unavailable', (
 
   assert.equal(positions.length, 1);
   assert.equal(positions[0].assetId, 'yes-active');
-  assert.equal(positions[0].quantity, 6);
+  assert.equal(positions[0].quantity, 60);
   assert.ok(Math.abs(positions[0].averagePrice - 0.2) < 1e-12);
   assert.equal(positions[0].marketValue, 0);
   assert.equal(positions[0].lifecycle, 'unknown');

@@ -1,6 +1,6 @@
 # Module 06 — Web Dashboard & API
 
-`docs/engineering/specs/web_api.md` defines the canonical 40-route catalog across all 39 handler modules with RBAC capability tiers and request/response contracts. This module covers the runtime mechanics and tracing.
+`docs/reference/api/web_rest_and_websocket_api.md` defines the canonical 40-route catalog across all 39 handler modules with RBAC capability tiers and request/response contracts. This module covers the runtime mechanics and tracing.
 
 ## Runtime shape (confirmed current)
 
@@ -13,7 +13,7 @@ backend/api/app.js              <- plain Node HTTP server, not Express, default 
     v
 backend/api/server/routes/index.js   <- flat map: pathname -> handler module, grouped into
     |                                    account/ bot/ data/ market/ status/ system/ subfolders
-    +--> backend/cli/sovereign_cli.js (in-process command execution)
+    +--> frontend/cli-tui/sovereign_cli.js (in-process command execution)
     +--> C++ backend executable, when available
 ```
 
@@ -33,7 +33,7 @@ block agent traffic from certain routes before it even gets a chance at token va
 ## Static asset serving
 
 The frontend isn't served by a separate process in production — `WEB_PUBLIC_ROOT` in `app.js` points at
-`Frontend/dashboard/dist` (the Vite build output), and unmatched requests fall through to a
+`frontend/dashboard/dist` (the Vite build output), and unmatched requests fall through to a
 `serveStatic()` function after route dispatch. That function does a real path-containment check
 (`path.normalize()` + `filePath.startsWith(WEB_PUBLIC_ROOT)`, 403 on failure) — a genuine path-traversal
 guard, not decorative. In dev, Vite's own dev server runs separately on port 3000 and is allow-listed in
@@ -41,7 +41,7 @@ the CORS config alongside the production origin.
 
 ## The frontend's side of the wire
 
-`Frontend/dashboard/src/lib/api.ts` exports `API_BASE_URL` (same-origin by default,
+`frontend/dashboard/src/lib/api.ts` exports `API_BASE_URL` (same-origin by default,
 overridable via `VITE_API_URL`), an `API_ENDPOINTS` object, and `DEFAULT_HEADERS`. Protected calls use
 `getAuthHeaders()` to attach the signed-in user's Supabase bearer token; privileged host tokens are never compiled into browser assets.
 Components import these directly rather than going through a shared fetch wrapper with retry logic — if
@@ -59,7 +59,7 @@ component's `fetch` call.
 
 **Lab 1 — find the real endpoint inventory, not the stale doc's list.** Read
 `backend/api/server/routes/index.js` directly and list every registered path. Compare against
-`docs/engineering/web_api.md`'s "Active Endpoints" section — what's missing from the doc?
+`docs/reference/api/web_rest_and_websocket_api.md`'s "Active Endpoints" section — what's missing from the doc?
 
 **Lab 2 — trace one route end to end.**
 ```bash
@@ -78,6 +78,6 @@ handler, not by trusting this sentence.)
 path that would attempt to escape `WEB_PUBLIC_ROOT`, and trace exactly which line rejects it.
 
 **Lab 4 — frontend to backend, one full round trip.** Pick one component under
-`Frontend/dashboard/src/` that calls an `API_ENDPOINTS` entry. Trace: component -> `api.ts` -> which
+`frontend/dashboard/src/` that calls an `API_ENDPOINTS` entry. Trace: component -> `api.ts` -> which
 backend route -> which data source. Does the displayed value in the UI match what you'd get calling the
 same endpoint directly with `curl`?

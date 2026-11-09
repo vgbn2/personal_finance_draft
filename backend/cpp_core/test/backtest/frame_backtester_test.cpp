@@ -81,6 +81,46 @@ int main() {
         return 1;
     }
 
+    // 4. Test multi-symbol chronological trade ordering and bankruptcy floor
+    std::vector<sovereign::AnnotatedRow> multi_rows;
+    auto make_row = [](const std::string& sym, const std::string& time, double close) {
+        sovereign::AnnotatedRow r;
+        r.symbol = sym;
+        r.timeframe = "1d";
+        r.as_of = time;
+        r.close = close;
+        r.predicted_direction = "long";
+        r.predicted_confidence = 0.8;
+        return r;
+    };
+    multi_rows.push_back(make_row("SYM_A", "2026-01-01T00:00:00Z", 100.0));
+    multi_rows.push_back(make_row("SYM_A", "2026-01-03T00:00:00Z", 110.0));
+    multi_rows.push_back(make_row("SYM_A", "2026-01-05T00:00:00Z", 110.0));
+    multi_rows.push_back(make_row("SYM_A", "2026-01-07T00:00:00Z", 120.0));
+
+    multi_rows.push_back(make_row("SYM_B", "2026-01-02T00:00:00Z", 50.0));
+    multi_rows.push_back(make_row("SYM_B", "2026-01-04T00:00:00Z", 55.0));
+    multi_rows.push_back(make_row("SYM_B", "2026-01-06T00:00:00Z", 55.0));
+    multi_rows.push_back(make_row("SYM_B", "2026-01-08T00:00:00Z", 60.0));
+
+    sovereign::FrameBacktestConfig multi_cfg;
+    multi_cfg.horizon = 1;
+    multi_cfg.threshold = 0.5;
+    multi_cfg.cost_bps = 0.0;
+    multi_cfg.position_size_pct = 0.1;
+    multi_cfg.monte_carlo_runs = 0;
+
+    sovereign::FrameBacktestResult multi_res = sovereign::FrameBacktester::runFromAnnotated(multi_rows, multi_cfg);
+    if (!expect(multi_res.base.trades.size() == 6, "Must execute 6 trades across 2 symbols")) {
+        return 1;
+    }
+    for (std::size_t i = 1; i < multi_res.base.trades.size(); ++i) {
+        if (!expect(multi_res.base.trades[i - 1].exit_time <= multi_res.base.trades[i].exit_time,
+                    "Trades must be strictly ordered by exit timestamp")) {
+            return 1;
+        }
+    }
+
     std::cout << "[PASS] FrameBacktester Mode B & Options Payoff tests passed!\n";
     return 0;
 }

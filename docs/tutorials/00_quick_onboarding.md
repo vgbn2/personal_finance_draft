@@ -15,22 +15,22 @@ whichever module matches what you're touching today.
 
 This tutorial series guides contributors through the core subsystems of the Sovereign Trading Platform with hands-on labs:
 
-1. **Native Engine (`backend/core/`)**: C++20 indicators, backtesting, and microsecond risk checks.
+1. **Native Engine (`backend/cpp_core/`)**: C++20 indicators, backtesting, and microsecond risk checks.
 2. **Data Pipeline (`shared/lib/market/`)**: Binary time-series ingestion and rolling indicator calculation.
 3. **Strategy Engine (`config/strategies/`)**: Declarative alpha models, backtests, and signal generation.
-4. **Execution Gateway (`backend/gateway/`)**: Broker order routing, risk gating, and double-entry paper ledger.
-5. **User Interfaces (`backend/cli/`, `Frontend/dashboard/`)**: Terminal UI (Ink 5) and React 19 web dashboard.
+4. **Execution Gateway (`backend/execution/`)**: Broker order routing, risk gating, and double-entry paper ledger.
+5. **User Interfaces (`frontend/cli-tui/`, `frontend/dashboard/`)**: Terminal UI (Ink 5) and React 19 web dashboard.
 
 ## Module map
 
 | # | Module | Covers | Don't re-read elsewhere for |
 |---|---|---|---|
-| 01 | [01_cpp_core_engine.md](01_cpp_core_engine.md) | `backend/core/` — the C++ trade/risk/ML engine | building & running ctest, tracing one real backtest/risk call |
+| 01 | [01_cpp_core_engine.md](01_cpp_core_engine.md) | `backend/cpp_core/` — the C++ trade/risk/ML engine | building & running ctest, tracing one real backtest/risk call |
 | 02 | [02_data_ingestion_pipeline.md](02_data_ingestion_pipeline.md) | `shared/lib/market/`, the backfill daemon, `storage/data/ts/` | the real binary ts-index format, base-grain mapping, staleness logic |
 | 03 | [03_strategy_backtest_ml.md](03_strategy_backtest_ml.md) | Strategy registry, backtests, ONNX inference, live automation | what a "strategy" is on disk, the live-automation stage list |
-| 04 | [04_trading_gateway_live_orders.md](04_trading_gateway_live_orders.md) | **Real money path** — Alpaca/Polymarket/MT5, risk engine, PIN gate | read this before touching anything in `backend/gateway/` or `trade.js` |
+| 04 | [04_trading_gateway_live_orders.md](04_trading_gateway_live_orders.md) | **Real money path** — Alpaca/Polymarket/MT5, risk engine, PIN gate | read this before touching anything in `backend/execution/` or `trade.js` |
 | 05 | [05_tui_cli_dashboard.md](05_tui_cli_dashboard.md) | The CLI/TUI dispatch model, the two competing menu definitions | why editing `manifest.js` sometimes does nothing |
-| 06 | [06_web_dashboard_api.md](06_web_dashboard_api.md) | `backend/api/`, `Frontend/dashboard/` | route auth model, where the frontend actually talks to the backend |
+| 06 | [06_web_dashboard_api.md](06_web_dashboard_api.md) | `backend/api/`, `frontend/dashboard/` | route auth model, where the frontend actually talks to the backend |
 | 07 | [07_testing_methodology.md](07_testing_methodology.md) | How tests actually run today | why `npx jest` lies to you about failures |
 
 ## How to use a module
@@ -42,7 +42,7 @@ answer without running anything defeats the point.
 
 ## Auth & settings (the two small subsystems that didn't earn a full module)
 
-- **Auth**: `backend/cli/lib/auth.js` — session persists to `~/.sovereign/session.json` (mode `0o600`).
+- **Auth**: `frontend/cli-tui/lib/auth.js` — session persists to `~/.sovereign/session.json` (mode `0o600`).
   `loginWithCredentials()` calls Supabase's `signInWithPassword`; `refreshSession()` auto-refreshes when
   `expires_at - 60s` has passed. Trade PIN hashing is HMAC-SHA256 with a timing-safe compare
   (`verifyPin`). Real gate call sites: `trade.js` (live trading), `trade_polymarket.js` (live Polymarket
@@ -58,7 +58,7 @@ answer without running anything defeats the point.
 ### Lab 0 — confirm your own settings state
 
 ```bash
-node backend/cli/sovereign_cli.js settings show
+node frontend/cli-tui/sovereign_cli.js settings show
 ```
 
 Read the output against the `feature_flags` list above. Which flags are on? If `ai_agent_trading` is on,

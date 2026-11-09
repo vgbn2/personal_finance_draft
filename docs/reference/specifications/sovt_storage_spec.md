@@ -116,7 +116,7 @@ flowchart TD
 
 ## 4. External Interface Requirements
 
-### 4.1 Native C++20 Header (`backend/core/src/data/binary_ts_reader.hpp`)
+### 4.1 Native C++20 Header (`backend/cpp_core/src/data/binary_ts_reader.hpp`)
 ```cpp
 #pragma pack(push, 1)
 struct OhlcvBar {
@@ -151,10 +151,10 @@ static_assert(sizeof(OhlcvBar) == 48, "OhlcvBar must be exactly 48 bytes");
 ### 6.1 Verification Matrix
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
-| `FR-SOVT-001` | SOVT Header Format | CTest Unit Test | `backend/core/tests/test_binary_ts_reader.cpp` |
-| `FR-SOVT-002` | 48-byte Packed Layout | C++ static_assert & CTest | `backend/core/tests/test_binary_ts_reader.cpp` |
-| `FR-SOVT-003` | Price & Time Invariants | Data Validator Test | `backend/core/tests/test_data_validator.cpp` |
-| `FR-SOVT-004` | Two-Pointer TS Merger | CTest Benchmark | `backend/core/tests/test_binary_ts_merger.cpp` |
+| `FR-SOVT-001` | SOVT Header Format | CTest Unit Test | `backend/cpp_core/test/data/binary_ts_reader_test.cpp` |
+| `FR-SOVT-002` | 48-byte Packed Layout | C++ static_assert & CTest | `backend/cpp_core/test/data/binary_ts_reader_test.cpp` |
+| `FR-SOVT-003` | Price & Time Invariants | Data Validator Test | `backend/cpp_core/test/data/ingestion_contract_test.cpp` |
+| `FR-SOVT-004` | Two-Pointer TS Merger | CTest Benchmark | `backend/cpp_core/test/data/binary_ts_merger_test.cpp` |
 | `FR-SOVT-005` | POSIX Atomic File Locking | Concurrency Stress Test | `npm run test:structure` |
-| `NFR-SOVT-001` | Scan Speed (>50M bars/s) | CTest Performance Test | `backend/core/tests/test_binary_ts_reader.cpp` |
-| `NFR-SOVT-003` | Merger RSS Memory (<5MB) | CTest Memory Test | `backend/core/tests/test_binary_ts_merger.cpp` |
+| `NFR-SOVT-001` | Scan Speed (>50M bars/s) | CTest Performance Test | `backend/cpp_core/test/data/binary_ts_reader_test.cpp` |
+| `NFR-SOVT-003` | Merger RSS Memory (<5MB) | CTest Memory Test | `backend/cpp_core/test/data/binary_ts_merger_test.cpp` |

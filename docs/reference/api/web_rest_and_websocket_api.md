@@ -34,10 +34,10 @@ The API server acts as an in-process bridge connecting web frontends, CLI consum
 ```mermaid
 flowchart TD
     CLIENT["Browser / TUI / MCP Agent"] -->|HTTP / WebSocket| APP["Native HTTP Server<br/>backend/api/app.js (Port 8787)"]
-    APP -->|Path Traversal Check| STATIC["Static Assets<br/>Frontend/dashboard/dist/"]
+    APP -->|Path Traversal Check| STATIC["Static Assets<br/>frontend/dashboard/dist/"]
     APP -->|Security Filter| ACCESS["Access Control & RBAC<br/>backend/api/server/services/access_control.js"]
     ACCESS --> ROUTER["Router Engine (40 Routes)<br/>backend/api/server/routes/index.js"]
-    ROUTER -->|In-Process Execution| CLI["CLI Command Handlers<br/>backend/cli/commands/"]
+    ROUTER -->|In-Process Execution| CLI["CLI Command Handlers<br/>frontend/cli-tui/commands/"]
     ROUTER -->|C++ Subprocess Bridge| CORE["Native C++ Core<br/>sovereign_wealth"]
     ROUTER -->|Read/Write State| CACHE["Disk State & Caches<br/>storage/data/"]
 ```
@@ -46,7 +46,7 @@ flowchart TD
 - **Entrypoint**: `backend/api/app.js` instantiated via standard `node:http.createServer()`.
 - **Default Port**: `8787` (configurable via `SOVEREIGN_PORT` or `PORT`).
 - **Zero Express Dependency**: Uses native URL parsing, manual body consumption buffers with prototype pollution guards, and streaming response writers.
-- **Static Asset Fallback**: Unmatched non-API requests route to `serveStatic()`, serving the compiled React 19 bundle from `Frontend/dashboard/dist/` guarded by strict path containment (`filePath.startsWith(WEB_PUBLIC_ROOT)`).
+- **Static Asset Fallback**: Unmatched non-API requests route to `serveStatic()`, serving the compiled React 19 bundle from `frontend/dashboard/dist/` guarded by strict path containment (`filePath.startsWith(WEB_PUBLIC_ROOT)`).
 
 ---
 
@@ -151,7 +151,7 @@ Standard JSON error payload for all non-2xx responses:
 - **NFR-API-002 (Throughput Capacity)**: The server MUST sustain $>2,500\text{ req/sec}$ on 4 CPU cores for cached quote and indicator routes.
 
 ### 5.2 Security Invariants
-- **NFR-API-003 (Path Traversal Protection)**: The static file server MUST verify that resolved paths reside strictly within `Frontend/dashboard/dist/`.
+- **NFR-API-003 (Path Traversal Protection)**: The static file server MUST verify that resolved paths reside strictly within `frontend/dashboard/dist/`.
 - **NFR-API-004 (Prototype Pollution Guard)**: JSON body parser MUST reject payloads containing `__proto__`, `constructor`, or `prototype` keys.
 
 ---
@@ -161,13 +161,13 @@ Standard JSON error payload for all non-2xx responses:
 ### 6.1 Verification Matrix
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
-| `FR-API-001` | RBAC Capability Enforcement | Route Contract Test | `tests/api/routes_access.test.js` |
-| `FR-API-002` | MCP Safety Gating | Unit Test | `tests/api/mcp_gating.test.js` |
+| `FR-API-001` | RBAC Capability Enforcement | Route Contract Test | `backend/api/tests/access_control.test.js` |
+| `FR-API-002` | MCP Safety Gating | Unit Test | `backend/api/tests/mcp_gate.test.js` |
 | `FR-API-003` | Status & Health Routes | Integration Test | `npm run test:api` |
 | `FR-API-004` | Market Data Routes | Integration Test | `npm run test:api` |
 | `FR-API-005` | Backtesting Dispatch | Integration Test | `npm run test:api` |
 | `FR-API-006` | Kill Switch & Emergency Halt | Safety Test | `npm run test:safety` |
 | `FR-API-007` | Database & Infra Routes | Integration Test | `npm run test:api` |
 | `NFR-API-001` | Latency SLA (<10ms) | API Benchmark | `npm run test:api` |
-| `NFR-API-003` | Path Traversal Protection | Security Test | `tests/api/path_traversal.test.js` |
-| `NFR-API-004` | Prototype Pollution Guard | Security Test | `tests/api/body_parser.test.js` |
+| `NFR-API-003` | Path Traversal Protection | Security Test | `backend/api/tests/api.test.js` |
+| `NFR-API-004` | Prototype Pollution Guard | Security Test | `backend/api/tests/api.test.js` |

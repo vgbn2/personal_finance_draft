@@ -152,7 +152,7 @@ It should become a proper local CLI package:
 ```json
 {
   "bin": {
-    "sovereign": "backend/cli/sovereign_cli.js"
+    "sovereign": "frontend/cli-tui/sovereign_cli.js"
   }
 }
 ```
@@ -265,7 +265,7 @@ The docs should show this flow with one broker example plus one traditional mark
 
 ## Broker Capability Matrix
 
-Create `config/system/broker_capabilities.json`.
+Create `configs/system/broker_capabilities.json`.
 
 ```json
 {
@@ -343,7 +343,7 @@ This keeps live broker credentials and signing keys local.
 ### Phase 1: Installable CLI
 
 - [x] Add `bin.sovereign` to `package.json`.
-- [x] Ensure `backend/cli/sovereign_cli.js` is executable or has a Windows-safe launch path.
+- [x] Ensure `frontend/cli-tui/sovereign_cli.js` is executable or has a Windows-safe launch path.
 - [x] Add `npm link` local install instructions.
 - [x] Add a smoke test proving the linked command can call `status --json`.
 - [x] Document `npm install` as the required dependency install step.
@@ -385,7 +385,7 @@ This keeps live broker credentials and signing keys local.
 
 ### Phase 5: Cloud vs Local Execution Guard
 
-- [x] Add `config/system/broker_capabilities.json`.
+- [x] Add `configs/system/broker_capabilities.json`.
 - [x] Add a runtime mode flag: `local-private`, `cloud-compute`, or `private-runner`.
 - [x] Add an explicit `self-hosted-server` or `private-runner` path for users who want to run their own server.
 - [x] Block live execution in `cloud-compute` mode.
@@ -412,9 +412,9 @@ This keeps live broker credentials and signing keys local.
 
 ### Phase 8: Documentation
 
-- [x] Add `docs/operational/local_first_setup.md`.
-- [x] Add `docs/operational/broker_setup.md`.
-- [x] Add `docs/operational/cloud_compute_vs_local_execution.md`.
+- [x] Add `docs/operational/local_first/local_first_setup.md`.
+- [x] Add `docs/operational/guides/broker_setup.md`.
+- [x] Add `docs/operational/local_first/cloud_compute_vs_local_execution.md`.
 - [x] Add a migration guide for existing `.env` users and existing paper-trading state.
 - [x] Add a clear trust-boundary diagram or table for local-private, private-runner, and cloud-compute.
 - [x] Update `README.md` quickstart with `npm install`, `npm link`, `sovereign setup`, and `sovereign doctor`.

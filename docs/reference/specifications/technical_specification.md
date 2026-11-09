@@ -36,7 +36,7 @@ Sovereign enforces a strict directional dependency flow across six functional ti
 flowchart TD
     subgraph Tier1["1. Presentation Tier"]
         TUI["Ink v7 TUI Dashboard<br/>DEC Mode 2026 Sync"]
-        VITE["React 19 + Vite Dashboard<br/>Frontend/dashboard/"]
+        VITE["React 19 + Vite Dashboard<br/>frontend/dashboard/"]
         MCP["MCP Server<br/>backend/mcp_server/"]
     end
 
@@ -176,12 +176,12 @@ $$\text{Cost}_{\text{total}} = \text{Notional} \times \left(\frac{\text{Fee}_{\t
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
 | `FR-TECH-001` | SOVT v1 Header Magic | Binary Format Test | `npm run test:data` |
-| `FR-TECH-002` | 48-byte Packed Bar | CTest Unit Test | `backend/core/tests/test_binary_ts_reader.cpp` |
-| `FR-TECH-003` | Two-Pointer TS Merger | Memory & Speed CTest | `backend/core/tests/test_binary_ts_merger.cpp` |
+| `FR-TECH-002` | 48-byte Packed Bar | CTest Unit Test | `backend/cpp_core/test/data/binary_ts_reader_test.cpp` |
+| `FR-TECH-003` | Two-Pointer TS Merger | Memory & Speed CTest | `backend/cpp_core/test/data/binary_ts_merger_test.cpp` |
 | `FR-TECH-004` | Atomic POSIX Lock | Concurrency Stress Test | `npm run test:structure` |
-| `FR-TECH-005` | Cost & Drag Model | CTest Drag Test | `backend/core/tests/test_cost_model.cpp` |
-| `FR-TECH-006` | Monte Carlo Resampling | CTest Stats Test | `backend/core/tests/test_stats_engine.cpp` |
-| `NFR-TECH-001` | Risk Gate Latency (<15µs) | Benchmark Test | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `NFR-TECH-002` | Backtest Throughput | Vector Benchmark | `backend/core/tests/test_frame_backtester.cpp` |
-| `NFR-TECH-003` | Sequential Read Speed | Reader Benchmark | `backend/core/tests/test_binary_ts_reader.cpp` |
+| `FR-TECH-005` | Cost & Drag Model | CTest Drag Test | `backend/cpp_core/test/risk/cost_model_test.cpp` |
+| `FR-TECH-006` | Monte Carlo Resampling | CTest Stats Test | `backend/cpp_core/test/analytics/stats_test.cpp` |
+| `NFR-TECH-001` | Risk Gate Latency (<15µs) | Benchmark Test | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `NFR-TECH-002` | Backtest Throughput | Vector Benchmark | `backend/cpp_core/test/backtest/frame_backtester_test.cpp` |
+| `NFR-TECH-003` | Sequential Read Speed | Reader Benchmark | `backend/cpp_core/test/data/binary_ts_reader_test.cpp` |
 | `NFR-TECH-005` | C++20 Toolchain Build | Native Compilation | `npm run native:build` (34/34 CTests) |

@@ -131,7 +131,7 @@ await appendCandlesToBinaryTs(symbol, timeframe, candles, {
 ```
 
 ### Step 3: Register Ingest CLI Command
-Expose the provider in `backend/cli/commands/data/data_ingest.js`:
+Expose the provider in `frontend/cli-tui/commands/data/data.js`:
 ```javascript
 // Add flag or family option:
 // sovereign ingest --provider myprovider --symbol BTC/USDT --timeframe 1h

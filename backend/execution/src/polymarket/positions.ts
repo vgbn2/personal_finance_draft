@@ -53,7 +53,7 @@ export function aggregatePolymarketFilledPositions(trades: any[] = []): Polymark
     const side = normalizePolymarketSide(trade.side);
     if (!assetId || !side) continue;
 
-    const size = toFiniteNumber(trade.size) / 10;
+    const size = toFiniteNumber(trade.size);
     const price = toFiniteNumber(trade.price);
     if (size <= 0 || price < 0) continue;
 

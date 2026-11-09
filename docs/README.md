@@ -89,8 +89,8 @@ The repository strictly enforces the [Diátaxis framework](https://diataxis.fr/)
 [Social Alpha Research Stub](research/social_alpha/README.md) — multi-modal YouTube transcript extraction and contrarian consensus alpha.
 - [Security, APIs & Deployment](engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md)
 - [Financial Primer for Systems Engineers](engineering/architecture/08_FINANCIAL_PRIMER_FOR_ENGINEERS.md)
-- [Product specification](engineering/specs/product_spec.md) — core invariants and capabilities matrix.
-- [Technical specification](engineering/specs/technical_spec.md) — multi-tier architecture, SOVT binary layout, and concurrency.
+- [Product specification](reference/specifications/product_specification.md) — core invariants and capabilities matrix.
+- [Technical specification](reference/specifications/technical_specification.md) — multi-tier architecture, SOVT binary layout, and concurrency.
 - [Engineering standards](engineering/standards/engineering_standards.md)
 - [Research overview](research/quant_research.md)
 - [Macro model (Historical)](archive/research/macro_model.md) — early exploratory macro and FX modeling direction.

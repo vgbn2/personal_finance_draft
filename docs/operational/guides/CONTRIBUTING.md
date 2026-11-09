@@ -69,7 +69,7 @@ All contributions, reviews, and bug triages reuse the repository's canonical ski
 
 ## 4. Code & Evidence Standards
 
-- **C++20**: Prefer standard-library constructs. Public headers in `backend/core/include/`, implementations in `backend/core/src/`, tests in `backend/core/test/`.
+- **C++20**: Prefer standard-library constructs. Public headers in `backend/cpp_core/include/`, implementations in `backend/cpp_core/src/`, tests in `backend/cpp_core/test/`.
 - **Node.js**: Native test runner (`tests/run_node_tests.js`). No external testing framework dependencies.
 - **Evidence Disclosure**: Every pull request must list exact commands run, record counts, and state what was not run.
 

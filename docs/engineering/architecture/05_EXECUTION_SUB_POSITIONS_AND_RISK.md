@@ -17,7 +17,7 @@ flowchart TD
         CLI["Discretionary CLI Operator<br/>Manual buy/sell commands<br/>ID: manual_cli_SPY_1756148200000_8c1e4d<br/>[Load: 1/10 | SLA: <5μs]"]
     end
 
-    subgraph Broker["Broker Execution Gateway (backend/gateway/src/adapters/alpaca_adapter.ts) [Load: 3/10 | 120-250ms]"]
+    subgraph Broker["Broker Execution Gateway (backend/execution/src/adapters/alpaca_adapter.ts) [Load: 3/10 | 120-250ms]"]
         B1["Sets client_order_id = signature"]
         B2["Clamps quantity: Q_clamped = floor(Q / q_step) * q_step"]
     end
@@ -184,7 +184,7 @@ MetaTrader 5 execution operates through a high-performance native IPC bridge bet
 
 ```mermaid
 flowchart TD
-    subgraph Gateway["Node.js Execution Gateway (backend/gateway/src/adapters/mt5_adapter.ts) [Load: 2/10]"]
+    subgraph Gateway["Node.js Execution Gateway (backend/execution/src/adapters/mt5_adapter.ts) [Load: 2/10]"]
         TCP["Persistent TCP Server<br/>127.0.0.1:8282 (NDJSON Framing)"]
         MAGIC["MagicCodec Encoder<br/>64-bit ORDER_MAGIC Bitmask"]
         NONCE["Nonce Router & Request Map<br/>Timeout: 15,000ms"]

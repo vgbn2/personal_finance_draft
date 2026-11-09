@@ -9,11 +9,11 @@
 ## Decision
 
 The Rust CLI mirror is retired from the forward implementation plan. The active operational CLI remains
-`backend/cli/sovereign_cli.js`; performance-sensitive work belongs in narrow, benchmark-backed C++ kernels.
+`frontend/cli-tui/sovereign_cli.js`; performance-sensitive work belongs in narrow, benchmark-backed C++ kernels.
 
 ## Evidence
 
-- The Rust tree under `backend/cli/src/` is an inactive scaffold.
+- The Rust tree under `frontend/cli-tui/src/` is an inactive scaffold.
 - Its command surface reports `mirrored-contract-only`; it does not provide an independent operational path.
 - Maintaining a third control-plane implementation adds dependency, build, and parity cost without measured
   runtime benefit.

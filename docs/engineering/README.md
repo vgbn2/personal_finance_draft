@@ -6,7 +6,6 @@ This directory contains the canonical technical and architectural specifications
 docs/engineering/
 ├── architecture/      # Canonical 8-Section Architecture Suite & Financial Primer
 ├── standards/         # Engineering standards, agentic coding guidelines & checklists
-├── specs/             # Component technical specs, manifests, and interface maps
 └── README.md          # Reading roadmap & directory index
 ```
 
@@ -53,13 +52,13 @@ The engineering architecture is organized into 8 modular, diagram-dense sections
 
 ---
 
-## 3. Specifications & Manifests (`specs/`)
+## 3. Specifications & Manifests (`reference/specifications/`)
 
-- **[Technical Spec](specs/technical_spec.md)** & **[Product Spec](specs/product_spec.md)**: System component specifications.
-- **[Stack Manifest](specs/stack_manifest.md)** & **[Capability Manifest](specs/capability_manifest.md)**: Engine and runtime capabilities.
-- **[Web API Reference](specs/web_api.md)**: Native Node.js REST and WebSocket endpoints.
-- **[TUI Feature Map](specs/tui_feature_map.md)**: Terminal dashboard command tree.
-- **[Kronos Pipeline Spec](specs/kronos_pipeline.md)**: High-frequency data pipeline notes.
+- **[Technical Spec](../reference/specifications/technical_specification.md)** & **[Product Spec](../reference/specifications/product_specification.md)**: System component specifications.
+- **[Stack Manifest](../reference/specifications/stack_manifest.md)** & **[Capability Manifest](../reference/specifications/capability_manifest.md)**: Engine and runtime capabilities.
+- **[Web API Reference](../reference/api/web_rest_and_websocket_api.md)**: Native Node.js REST and WebSocket endpoints.
+- **[TUI Feature Map](../reference/specifications/tui_feature_map.md)**: Terminal dashboard command tree.
+- **[Kronos Pipeline Spec](../reference/specifications/kronos_pipeline.md)**: High-frequency data pipeline notes.
 
 Historical specifications are preserved in the [Documentation Archive](../archive/README.md):
 - **[Native Maintenance Notes](../archive/native_maintenance_notes.md)**: Historical native engine maintenance records.

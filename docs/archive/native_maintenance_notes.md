@@ -32,7 +32,7 @@
 
 ## Tests and operations
 
-- Keep `backend/core/test` focused on executable contracts and compact fixtures,
+- Keep `backend/cpp_core/test` focused on executable contracts and compact fixtures,
   without generated outputs or empty shells.
 - Route build, setup, test, deployment, and data operations through the
   repository's active CLI or web entrypoints.

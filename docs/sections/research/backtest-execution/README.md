@@ -2,7 +2,7 @@
 
 > **Status:** Implemented for source/test scope; provider, host, paper, and live qualification are not implied.
 > **Audience:** quantitative researchers and maintainers of the research CLI or strategy engine.
-> **Canonical owners:** `backend/cli/commands/research/research.js`, `shared/lib/strategy/backtest.js`, `shared/lib/runtime/backend_bridge.js`.
+> **Canonical owners:** `frontend/cli-tui/commands/research/research.js`, `shared/lib/strategy/backtest.js`, `shared/lib/runtime/backend_bridge.js`.
 > **Review triggers:** backtest CLI arguments, feature-frame splits, engine dispatch, metric schema, degraded-mode semantics, prop-firm scoring, temporary native-frame protocol.
 
 ## Purpose And Boundary
@@ -11,11 +11,11 @@ This section owns the path from a validated feature frame to a backtest result. 
 
 It does not own market-data ingestion, indicator formulas, strategy-file parsing, native sweep optimization, order execution, or promotion into automated trading. The sweep and dataset-catalog surfaces remain outside this section.
 
-The guided walkthrough remains in [Codebase Tour: Strategy, Backtesting & ML](../../../codebase_tour/03_strategy_backtest_ml.md). That tutorial should link here for exact ownership instead of restating this contract.
+The guided walkthrough remains in [Codebase Tour: Strategy, Backtesting & ML](../../../tutorials/03_strategy_backtest_ml.md). That tutorial should link here for exact ownership instead of restating this contract.
 
 ## Entrypoint And Ownership Flow
 
-`commandBacktest(args)` in `backend/cli/commands/research/research.js` is the operator-facing orchestrator:
+`commandBacktest(args)` in `frontend/cli-tui/commands/research/research.js` is the operator-facing orchestrator:
 
 1. It resolves a registered strategy and applies strategy defaults unless CLI flags override them.
 2. It selects sample data, cached validated sources, or an explicitly requested provider-history window.

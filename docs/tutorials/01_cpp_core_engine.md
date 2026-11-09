@@ -1,6 +1,6 @@
 # Module 01 — The C++ Core Engine
 
-`backend/core/` is the high-performance native layer: backtesting, technical indicators, pre-trade risk
+`backend/cpp_core/` is the high-performance native layer: backtesting, technical indicators, pre-trade risk
 checks, portfolio math, and ONNX model inference. It's a separate binary the JS side spawns and talks to
 over stdin/stdout JSON, not a library Node links against directly.
 
@@ -70,15 +70,15 @@ Expect all 34 CTest suites to pass (`npm run test:core`). If anything fails, tha
 
 **Lab 2 — trace one real call end to end.** Run a status check from the JS side:
 ```bash
-node backend/cli/sovereign_cli.js backend status --json
+node frontend/cli-tui/sovereign_cli.js backend status --json
 ```
 Then open `shared/lib/runtime/backend_bridge.js` and find `runBackendCommand` — confirm for yourself
 which binary path got invoked and what args were passed. Open `main.cpp` around line 1015 and find the
 `status` branch. You now know the full round trip for one command.
 
 **Lab 3 — find the risk gate yourself.** Without using ctrl-F for "drawdown", open
-`src/risk/pre_trade_risk.cpp` and answer: what two conditions cause `halt_trading` to be set, and what
-does the caller (`backend/gateway/src/index.ts`, module 04) do when it sees `halt_trading: true`? You'll
+`backend/cpp_core/src/risk_management/pre_trade_risk.cpp` and answer: what two conditions cause `halt_trading` to be set, and what
+does the caller (`backend/execution/src/index.ts`, module 04) do when it sees `halt_trading: true`? You'll
 need module 04 for the second half — that's intentional, the boundary is real.
 
 **Lab 4 — the ONNX fallback.** Find where `OnnxModel::backend()` (`onnx_model.cpp:60`) is called from

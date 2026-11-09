@@ -2,18 +2,18 @@
 
 > **Status:** Implemented for source/test scope; real-terminal, host, provider, paper, and live qualification remain separate.
 > **Audience:** maintainers of the CLI, terminal UI, and command-safety boundary.
-> **Canonical owners:** `backend/cli/sovereign_dashboard.mjs`, `backend/cli/tui/dashboard_exec.js`, `backend/cli/tui/dashboard_layout.js`, `backend/cli/tui/command_input.mjs`, `backend/cli/tui/chat_parser.js`.
+> **Canonical owners:** `frontend/cli-tui/sovereign_dashboard.mjs`, `frontend/cli-tui/tui/dashboard_exec.js`, `frontend/cli-tui/tui/dashboard_layout.js`, `frontend/cli-tui/tui/command_input.mjs`, `frontend/cli-tui/tui/chat_parser.js`.
 > **Review triggers:** dashboard command schema, viewport breakpoints, input editing, command resolution, child-process mode, PIN routing, long-running command cancellation.
 
 ## Purpose And Boundary
 
 This section owns the modern Ink terminal dashboard: command discovery, flag editing, symbol and strategy pickers, chat-style command resolution, responsive layout, command execution, and the UI-side live-PIN gate.
 
-It does not own the legacy prompt engine, individual command behavior, broker authorization, provider ingestion, or execution policy. The tutorial [CLI & TUI Dispatch](../../../codebase_tour/05_tui_cli_dashboard.md) teaches the two-engine design; this page is the current reference contract.
+It does not own the legacy prompt engine, individual command behavior, broker authorization, provider ingestion, or execution policy. The tutorial [CLI & TUI Dispatch](../../../tutorials/05_tui_cli_dashboard.md) teaches the two-engine design; this page is the current reference contract.
 
 ## Owners And State Flow
 
-`backend/cli/sovereign_dashboard.mjs` exports three public surfaces:
+`frontend/cli-tui/sovereign_dashboard.mjs` exports three public surfaces:
 
 - `M`: the modern dashboard's inline command schema;
 - `INTERACTIVE_CMDS`: commands that require terminal takeover;
@@ -30,7 +30,7 @@ Supporting owners keep pure or narrowly testable behavior outside the component:
 
 ## Command Schema And Known Duplication
 
-The modern dashboard reads `M`; the legacy TUI reads `backend/cli/tui/manifest.js`. They are distinct schemas. A command or flag added to one does not appear in the other.
+The modern dashboard reads `M`; the legacy TUI reads `frontend/cli-tui/tui/manifest.js`. They are distinct schemas. A command or flag added to one does not appear in the other.
 
 This duplication has focused contract coverage but remains maintainability debt. Do not describe parity unless a direct comparison proves it. A future unification should preserve renderer-specific metadata while moving command identity and flag semantics to one canonical source.
 
@@ -84,7 +84,7 @@ In-pane child stdout/stderr is bounded by a scrollable output window. Spawn erro
 
 Escape or `c` while a command runs sends `SIGINT`; Ctrl+C also exits the dashboard. Interactive terminal takeover temporarily absorbs the parent process's console `SIGINT` so a child interruption does not silently terminate the dashboard parent.
 
-Unexpected top-level exceptions on a real launch are recorded in `workspace/dashboard_crash.log`, the terminal cursor/colors are restored, and the process exits nonzero. That log is operational evidence, not canonical documentation.
+Unexpected top-level exceptions on a real launch are recorded in operational log `workspace/.../dashboard_crash.log`, the terminal cursor/colors are restored, and the process exits nonzero. That log is operational evidence, not canonical documentation.
 
 The daemon status indicator is observational only. It checks a status-file PID with signal 0 and can theoretically show a stale process after PID reuse; no execution decision depends on it.
 

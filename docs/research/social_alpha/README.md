@@ -50,4 +50,4 @@ This research module defines an alternative alpha generation pipeline extracting
 
 - **Raw Ingestion Cache**: `storage/data/research/social/raw/` (unprocessed video metadata and transcripts, gitignored).
 - **Normalized Factor Feed**: `storage/data/research/social/factors/` (NDJSON structured factor records matching `shared/contracts/analysis/constants.js`).
-- **Creator Track Record Ledger**: `storage/data/research/social/ledger/creator_reputation.json` (Bayesian hit-rate and Brier accuracy matrix).
+- **Creator Track Record Ledger**: `storage/data/research/social/ledger/.../creator_reputation.json` (Bayesian hit-rate and Brier accuracy matrix).

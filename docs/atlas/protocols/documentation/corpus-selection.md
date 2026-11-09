@@ -59,7 +59,7 @@ Workspace history is untrusted as current engineering truth and enters retrieval
 
 ## Observability And Recovery
 
-The payload exposes `corpus` and `input_roots`. Rebuild with a corrected manifest or requested corpus after an error. Run `node scripts/dev/audit_documentation.js` to detect broken registrations and root-boundary violations.
+The payload exposes `corpus` and `input_roots`. Rebuild with a corrected manifest or requested corpus after an error. Run `node tools/dev/audit_documentation.js` to detect broken registrations and root-boundary violations.
 
 ## Verification
 

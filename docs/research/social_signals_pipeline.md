@@ -123,7 +123,7 @@ Raw transcripts and posts are segmented into semantic chunks and evaluated again
 
 ## 5. Bayesian Credibility & Decay Scoring
 
-Raw signals from social media cannot be traded naively. The pipeline maintains an ongoing, historical **Creator Track Record Ledger** stored in `storage/data/social_signals/creator_reputation.json`.
+Raw signals from social media cannot be traded naively. The pipeline maintains an ongoing, historical **Creator Track Record Ledger** stored in `storage/data/social_signals/.../creator_reputation.json`.
 
 ### Credibility Formula
 Each creator $c$ is assigned a dynamic credibility weight $W_c(t) \in [0.0, 1.0]$ updated after each resolved trade signal:

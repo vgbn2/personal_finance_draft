@@ -1,6 +1,6 @@
 # Environment Boundaries
 
-`config/system/environment_manifest.json` is the canonical name-only classification contract. It classifies
+`configs/system/environment_manifest.json` is the canonical name-only classification contract. It classifies
 every environment name and alias used by source or tracked examples without reading or reporting values.
 
 Run the contract check with:
@@ -42,7 +42,7 @@ so adding a new browser variable requires a manifest and contract-test change.
 
 - `.env.example` is the legacy name inventory while entrypoint projection is migrated.
 - `.env.central.example` documents the private, non-live research host.
-- `Frontend/dashboard/.env.example` contains the complete browser allowlist.
+- `frontend/dashboard/.env.example` contains the complete browser allowlist.
 - Real `.env`, `.env.local`, `.env.private`, `.env.central`, and future `.env.execution` files are ignored,
   operator-owned, and must remain mode-restricted where supported.
 - Execution material must not be copied into web, MCP, default CLI, writer, or remote source-mirror inputs.

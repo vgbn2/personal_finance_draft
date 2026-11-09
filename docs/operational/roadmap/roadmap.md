@@ -17,7 +17,7 @@ Evidence labels: **source** = inspected implementation; **offline-tested** = spe
 | Strategy classification | **Offline-tested:** strategy classification tests exercise real strategy files and the classifier CLI | Classification alone does not prove research quality, supported data, or safe execution |
 | Custom API keys / 9Router / MCP | **Unverified:** no end-to-end custom-provider credential integration established by this bounded review | Trace existing configuration owners first; qualify actual endpoint/protocol/auth requirements before implementing |
 | Human login / SSO | **Source:** `frontend/dashboard/src/lib/supabase.ts` is explicitly offline/null; backend Supabase service reports unconfigured | Password/OTP callsites and frontend local sessions do not establish working SSO or backend authorization |
-| Research workflow | **Source/documentation:** [strategy explorer workflow](../../how_to/strategy_explorer_workflow.md), `backend/mcp_server/index.ts` and `lib/access_control.ts` are existing integration surfaces | Scraper/Tavily-to-research-to-paper workflow not exercised end to end here |
+| Research workflow | **Source/documentation:** [strategy explorer workflow](../../how_to/strategy_explorer_workflow.md), `backend/mcp_server/index.ts` and `backend/mcp_server/lib/access_control.ts` are existing integration surfaces | Scraper/Tavily-to-research-to-paper workflow not exercised end to end here |
 | Web/TUI testing | **Source:** existing responsive CDP and interactive virtual-terminal tests | No fresh app headless run or integrated RAM screenshot/computer-vision pipeline in this planning slice |
 | Networking / remote access | **Documentation:** [security and deployment architecture](../../engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md) and [deployment/TUI guide](../../how_to/docker_deployment_and_tui.md) | Actual listener exposure, proxy trust, access policy, SSO and revocation require separate authorized verification |
 
@@ -160,10 +160,10 @@ The headings and checkboxes below are retained as historical records; current re
 - [x] Build system (CMake)
 
 ## Phase 2: Data Contracts And Asset Calculations (COMPLETE)
-- [x] Asset identity system (`backend/core/src/data/data_snapshot.hpp`)
+- [x] Asset identity system (`backend/cpp_core/src/data/data_snapshot.hpp`)
 - [x] Universe loading (`loadMarketUniverse()` in `data_snapshot.cpp`)
 - [x] OHLCV parsing/validation (`data_validator.cpp`)
-- [x] Technical indicators (`indicators/indicator_engine.cpp`: RSI, MACD, ATR, Bollinger Bands, rolling vol)
+- [x] Technical indicators (`backend/cpp_core/src/technical_indicators/indicator_engine.cpp`: RSI, MACD, ATR, Bollinger Bands, rolling vol)
 - [x] Data quality reports (`DataQualityReport`, `data_quality_report.json`)
 - [x] Ingestion adapters per family (equity, crypto, FX, index, macro, news, sentiment)
 - [x] Stats engine (Sharpe, Sortino, Calmar, drawdown, Monte Carlo)
@@ -173,25 +173,25 @@ The headings and checkboxes below are retained as historical records; current re
 
 ## Phase 3: Research, Backtesting, And Quantitative ML (COMPLETE)
 - [x] Backtest engine (`backtester.cpp`, deterministic long-only & annotated paths)
-- [x] Strategy runner / replay (`replay/strategy_runner.cpp`)
+- [x] Strategy runner / replay (`backend/cpp_core/src/backtest/replay/strategy_runner.cpp`)
 - [x] Transaction cost model (slippage drag and per-side fee deductions in backtester)
-- [x] Feature frame builder (`backend/core/src/features/feature_frame.cpp`)
-- [x] Model candidate registry (`backend/cli/sovereign_cli.js model compare`)
+- [x] Feature frame builder (`backend/cpp_core/src/features/feature_frame.hpp`)
+- [x] Model candidate registry (`frontend/cli-tui/sovereign_cli.js model compare`)
 - [x] Autonomous Strategy Explorer daemon (6D novelty hypercube search)
 - Canonical Spec: [03_NATIVE_CORE_AND_BACKTESTER.md](../../engineering/architecture/03_NATIVE_CORE_AND_BACKTESTER.md), [04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md](../../engineering/architecture/04_QUANTITATIVE_ALPHA_AND_ML_WORKBENCH.md)
 
 ## Phase 4: Macro/Market Model & Prediction Markets (COMPLETE)
 - [x] Macro data ingestion (FRED, World Bank, news/sentiment adapters)
-- [x] Regime classification (`backend/core/src/research/regime_classifier.cpp`)
-- [x] Economy health scoring (`backend/core/src/research/economy_health.cpp`)
+- [x] Regime classification (`backend/cpp_core/src/regime/regime_detector.cpp`)
+- [x] Economy health scoring (`backend/cpp_core/src/features/macro_features.cpp`)
 - [x] Polymarket Gamma & CLOB 1s L2 orderbook snapshotting
-- [x] Prediction market virtual paper trading simulator (`backend/gateway/src/paper_ledger.js`)
+- [x] Prediction market virtual paper trading simulator (`backend/execution/src/paper_ledger.js`)
 - Canonical Spec: [06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md](../../engineering/architecture/06_PREDICTION_MARKETS_AND_ORDERBOOK_ARCHIVE.md)
 
 ## Phase 5: Portfolio Monitoring, Dashboards & Execution (COMPLETE)
-- [x] Sovereign Ink v7 TUI Terminal Dashboard (`backend/cli/sovereign_dashboard.mjs`)
-- [x] React 19 + Vite Web Dashboard (`Frontend/dashboard/`) & Native HTTP API bridge (40 routes)
+- [x] Sovereign Ink v7 TUI Terminal Dashboard (`frontend/cli-tui/sovereign_dashboard.mjs`)
+- [x] React 19 + Vite Web Dashboard (`frontend/dashboard/`) & Native HTTP API bridge (40 routes)
 - [x] Broker adapters (Alpaca Paper/Live, Gate.io, Polymarket)
-- [x] Virtual Sub-Positions Ledger (`shared/lib/trade/sub_positions_ledger.js`)
+- [x] Virtual Sub-Positions Ledger (`shared/lib/runtime/sub_positions_ledger.js`)
 - [x] Pre-Trade Risk gates (<15µs C++ check, max drawdown circuit breakers, hardware PIN authorization)
 - Canonical Spec: [05_EXECUTION_SUB_POSITIONS_AND_RISK.md](../../engineering/architecture/05_EXECUTION_SUB_POSITIONS_AND_RISK.md), [07_SECURITY_API_TESTING_DEPLOYMENT.md](../../engineering/architecture/07_SECURITY_API_TESTING_DEPLOYMENT.md)

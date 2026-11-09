@@ -13,7 +13,7 @@ This roadmap defines the future development goals for the CLI, focusing on TUI r
 - [ ] **Search Ranking**: Implement basic frequency-based ranking in the search engine to suggest frequently used symbols at the top of the filtered lists.
 
 ## 3. Automated Quality Assurance (Anti-Bullshit Testing)
-- [ ] **TUI Integration Tests**: Add `tests/cli/tui_interaction_test.js` using mock STDIN/STDOUT to verify the TUI flow without human intervention.
+- [ ] **TUI Integration Tests**: Add `tests/scripts/tui/core/tui_terminal_automation.test.js` using mock STDIN/STDOUT to verify the TUI flow without human intervention.
 - [ ] **Schema-Driven Validation**: Add a pre-execution step to all `backend` commands that validates user inputs (like symbols) against the `SymbolRegistry` before triggering the C++ binary.
 - [ ] **Binary Integrity Checks**: Before every `spawnSync` call, verify the binary exists, is executable, and matches the expected hash to prevent "stale binary" errors.
 

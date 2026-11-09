@@ -36,7 +36,7 @@ MetaTrader 5 integrates via a local TCP NDJSON socket bridge. The Sovereign back
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │                    Sovereign Platform                        │
-│  backend/gateway/src/adapters/mt5_adapter.ts (TCP Server)   │
+│  backend/execution/src/adapters/mt5_adapter.ts (TCP Server)   │
 │                   Port 8282 (127.0.0.1)                      │
 └──────────────────────────────▲───────────────────────────────┘
                                │
@@ -59,8 +59,8 @@ Auto-install the quote export script and trade bridge EA to your MT5 terminal:
 node backend/scripts/verification/mt5_bridge_install.js
 ```
 Or manually copy:
-- `tools/mt5/SovereignTradeBridge.mq5` → `MQL5/Experts/SovereignTradeBridge.mq5`
-- `tools/mt5/SovereignExport.mq5` → `MQL5/Scripts/SovereignExport.mq5`
+- `tools/mt5/SovereignTradeBridge.mq5` → `tools/mt5/SovereignTradeBridge.mq5`
+- `tools/mt5/SovereignExport.mq5` → `tools/mt5/SovereignExport.mq5`
 
 Open **MetaEditor**, compile `SovereignTradeBridge.mq5` into `.ex5`, and attach the EA to any chart with **"Allow Algo Trading"** enabled.
 
@@ -68,32 +68,32 @@ Open **MetaEditor**, compile `SovereignTradeBridge.mq5` into `.ex5`, and attach 
 Manage account credentials in isolated AES-256-GCM encrypted slots (`propfirm`, `test`, `live`):
 ```bash
 # Add or update profile slot
-node backend/cli/sovereign_cli.js mt5 profile add --slot test
+node frontend/cli-tui/sovereign_cli.js mt5 profile add --slot test
 
 # List registered profile summaries
-node backend/cli/sovereign_cli.js mt5 profile list
+node frontend/cli-tui/sovereign_cli.js mt5 profile list
 
 # Remove profile slot
-node backend/cli/sovereign_cli.js mt5 profile remove --slot test
+node frontend/cli-tui/sovereign_cli.js mt5 profile remove --slot test
 ```
 
 ### Step 3: Run Diagnostics
 Verify terminal path discovery, vault encryption, and bridge readiness:
 ```bash
-node backend/cli/sovereign_cli.js mt5 doctor
+node frontend/cli-tui/sovereign_cli.js mt5 doctor
 ```
 
 ### Step 4: Connect & Trade
 Launch the terminal with ephemeral crash-safe configuration and execute trades:
 ```bash
 # Connect and launch terminal (with optional --headless flag for Wine/Xvfb)
-node backend/cli/sovereign_cli.js mt5 connect --slot test
+node frontend/cli-tui/sovereign_cli.js mt5 connect --slot test
 
 # Execute market buy order
-node backend/cli/sovereign_cli.js mt5 buy --symbol EURUSD --lots 0.10
+node frontend/cli-tui/sovereign_cli.js mt5 buy --symbol EURUSD --lots 0.10
 
 # Execute market sell order
-node backend/cli/sovereign_cli.js mt5 sell --symbol GBPUSD --lots 0.05
+node frontend/cli-tui/sovereign_cli.js mt5 sell --symbol GBPUSD --lots 0.05
 ```
 
 ### Step 5: Remote Execution via Docker
@@ -123,7 +123,7 @@ ALPACA_LIVE_BASE_URL=https://api.alpaca.markets
 ### Verification
 ```bash
 # Check Alpaca gateway status and account connectivity
-node backend/cli/sovereign_cli.js doctor alpaca
+node frontend/cli-tui/sovereign_cli.js doctor alpaca
 ```
 
 ---
@@ -146,10 +146,10 @@ POLYMARKET_SIGNATURE_TYPE=2    # 0=EOA, 1=POLY_PROXY, 2=POLY_GNOSIS_SAFE
 ### Verification & Trading
 ```bash
 # Verify CLOB connectivity and balances
-node backend/cli/sovereign_cli.js doctor polymarket
+node frontend/cli-tui/sovereign_cli.js doctor polymarket
 
 # Inspect active prediction market positions
-node backend/cli/sovereign_cli.js polymarket positions
+node frontend/cli-tui/sovereign_cli.js polymarket positions
 ```
 
 ---
@@ -166,7 +166,7 @@ GATEIO_BASE_URL=https://api.gateio.ws
 
 ### Verification
 ```bash
-node backend/cli/sovereign_cli.js doctor gateio
+node frontend/cli-tui/sovereign_cli.js doctor gateio
 ```
 
 ---
@@ -182,5 +182,5 @@ SOVEREIGN_SUPABASE_SECRET_KEY=your_service_role_key
 
 ### Verification
 ```bash
-node backend/cli/sovereign_cli.js doctor supabase
+node frontend/cli-tui/sovereign_cli.js doctor supabase
 ```

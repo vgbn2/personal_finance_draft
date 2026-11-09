@@ -6,31 +6,31 @@ This document details the architecture, execution modes, mathematical models, bo
 
 ## 1. Native C++20 Core Architecture
 
-The core engine is authored in standard **C++20** with CMake (`backend/core/CMakeLists.txt`), compiling into a zero-dependency static library `sovereign_core_lib` and an executable `sovereign_wealth`.
+The core engine is authored in standard **C++20** with CMake (`backend/cpp_core/CMakeLists.txt`), compiling into a zero-dependency static library `sovereign_core_lib` and an executable `sovereign_wealth`.
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion["Data Ingestion & Parsing (backend/core/src/data/) [Load: 2/10]"]
+    subgraph Ingestion["Data Ingestion & Parsing (backend/cpp_core/src/data/) [Load: 2/10]"]
         RDR["binary_ts_reader.cpp: Zero-copy binary SOVT parser, tail seek, sanitation"]
         MRG["binary_ts_merger.cpp: Zero-allocation streaming two-pointer merge (O(1) memory, <5MB RSS)"]
     end
 
-    subgraph Analytics["Analytics & Indicator Engine (backend/core/src/indicators/) [Load: 6/10]"]
+    subgraph Analytics["Analytics & Indicator Engine (backend/cpp_core/src/technical_indicators/) [Load: 6/10]"]
         IND["indicator_engine.cpp: SIMD-vectorized RSI, MACD, Bollinger Bands, ATR, Rolling Vol"]
         MC["monte_carlo.cpp: High-throughput bootstrap resampling with vectorized xorshift64 PRNG"]
     end
 
-    subgraph Backtest["Quantitative Backtesting & Optimization (backend/core/src/backtest/) [Load: 7/10]"]
+    subgraph Backtest["Quantitative Backtesting & Optimization (backend/cpp_core/src/backtest/) [Load: 7/10]"]
         FBT["frame_backtester.cpp: Dual-mode simulation (Mode A Native vs Mode B Feature Matrix)"]
         OPT["optimizer.cpp: Multi-threaded OpenMP grid sweep parameter optimizer"]
     end
 
-    subgraph Risk["Pre-Trade Risk & Safety Gates (backend/core/src/risk/) [Load: 1/10]"]
+    subgraph Risk["Pre-Trade Risk & Safety Gates (backend/cpp_core/src/risk_management/) [Load: 1/10]"]
         PTR["pre_trade_risk.cpp: Microsecond (<15µs) pre-trade gate (drawdown, concentration, notional)"]
         DD["drawdown_guard.cpp: Portfolio peak-to-trough circuit breaker"]
     end
 
-    CLI["Unified Entrypoint & CLI Bridge (backend/core/src/main.cpp)<br/>Commands: backtest, ts-merge, risk check, monte-carlo, sweep"]
+    CLI["Unified Entrypoint & CLI Bridge (backend/cpp_core/src/main.cpp)<br/>Commands: backtest, ts-merge, risk check, monte-carlo, sweep"]
 
     Ingestion -->|Contiguous Memory Spans: std::span<const Bar>| Analytics
     Analytics -->|Trade Signals & Feature Matrices| Backtest

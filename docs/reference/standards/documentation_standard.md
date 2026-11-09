@@ -25,7 +25,7 @@ Use one primary purpose per page.
 | Type | Reader need | Repository location | Typical content |
 |---|---|---|---|
 | Orientation | “What is this, and where do I start?” | `README.md`, `docs/README.md`, `docs/ARCHITECTURE.md` | purpose, safety boundary, first steps, navigation |
-| Tutorial | “Teach me by walking through the real system.” | `docs/codebase_tour/` | guided traces and bounded labs |
+| Tutorial | “Teach me by walking through the real system.” | `docs/tutorials/` | guided traces and bounded labs |
 | How-to / runbook | “Help me complete or recover a task.” | `docs/operational/` | setup, deployment, diagnosis, recovery, rollback |
 | Reference | “Give me the exact contract.” | `docs/reference/`, source API comments | CLI/API/config/schema/data-format contracts |
 | Explanation | “Why is the system designed this way?” | `docs/engineering/`, `docs/research/`, `docs/design/` | architecture, trade-offs, safety model, research rationale |

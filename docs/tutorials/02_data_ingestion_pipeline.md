@@ -1,11 +1,11 @@
 # Module 02 — Data Ingestion & Storage
 
-Supersedes `docs/engineering/capability_manifest.md`'s data-file claims (`data/market_data.db`, SQLite
+Supersedes `docs/reference/specifications/capability_manifest.md`'s data-file claims (legacy market_data.db, SQLite
 trade logs) — that's an old layout. The real canonical data plane is `storage/data/ts/`, a binary format.
 
 ## The base-grain concept
 
-`backend/cli/commands/data/data_rollup.js:24-30` defines `FAMILY_BASE_TF`:
+`frontend/cli-tui/commands/data/data_rollup.js:24-30` defines `FAMILY_BASE_TF`:
 
 ```js
 { crypto: '1m', equities: '1m', indices: '5m', commodities: '5m', fx: '5m' }
@@ -43,7 +43,7 @@ directly).
 
 ## The backfill daemon's staleness logic
 
-`backend/cli/commands/data/backfill_daemon.js`. `isFresh()` (`shared/lib/market/coverage.js:146-173`)
+`frontend/cli-tui/commands/data/backfill_daemon.js`. `isFresh()` (`shared/lib/market/coverage.js:146-173`)
 checks the last bar's age against a per-family threshold (`validation.js:7-77`; crypto 5m is the
 strictest at 3 hours). `readCoverage()` (`coverage.js:77-133`) reads just the bin's tail timestamp — an
 8-byte read, not a full materialization — specifically so the freshness check itself doesn't trigger the
@@ -71,7 +71,7 @@ machine — list the directory first if BTCUSDT isn't there.)
 
 **Lab 2 — check real freshness, not assumed freshness.**
 ```bash
-node backend/cli/sovereign_cli.js backend integrity --json
+node frontend/cli-tui/sovereign_cli.js backend integrity --json
 ```
 Find a symbol marked stale or missing. Open `coverage.js`'s `isFresh()` and work out, from the real
 threshold table, exactly how old that symbol's data would need to be to trigger that status.
@@ -82,7 +82,7 @@ or use the same tail-window trick from Lab 1's reading?
 
 **Lab 4 — run the daemon once, dry.**
 ```bash
-node backend/cli/sovereign_cli.js backfill-daemon --once --families crypto
+node frontend/cli-tui/sovereign_cli.js backfill-daemon --once --families crypto
 ```
 Read the output. For each symbol it touched, can you say whether it chose `deep`, `incremental`, or
 `skip`, and why, using only `decideAction()`'s logic (not a guess)?

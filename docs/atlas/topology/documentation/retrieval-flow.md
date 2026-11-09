@@ -29,7 +29,7 @@ last_verified:
 
 ## Entrypoints
 
-- `node scripts/dev/build_docs_rag_index.js` builds and saves the default corpus.
+- `node tools/dev/build_docs_rag_index.js` builds and saves the default corpus.
 - Library callers use `buildDocsIndex`, `loadOrBuildIndex`, and `searchDocs`.
 - Focused tests call the library with `save: false` to avoid persistent state.
 

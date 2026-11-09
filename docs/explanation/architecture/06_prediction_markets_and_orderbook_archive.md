@@ -78,7 +78,7 @@ sequenceDiagram
 
 ---
 
-## 4. Virtual Prediction Paper Trading Simulator (`backend/gateway/src/paper_ledger.js`)
+## 4. Virtual Prediction Paper Trading Simulator (`backend/execution/src/paper_ledger.js`)
 
 To test prediction strategies locally without capital risk, Sovereign maintains an append-only, checksummed virtual paper ledger:
 

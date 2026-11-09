@@ -2,7 +2,7 @@
 
 > **Status:** Implemented  
 > **Audience:** Quantitative Traders, Strategy Developers, Gateway Engineers  
-> **Canonical owners:** `shared/lib/strategy/polymarket_clob_model.js`, `backend/gateway/src/adapters/polymarket_adapter.ts`, `backend/gateway/src/polymarket/polybolt_bbo_monitor.ts`  
+> **Canonical owners:** `shared/lib/strategy/polymarket_clob_model.js`, `backend/execution/src/adapters/polymarket_adapter.ts`, `backend/execution/src/polymarket/polybolt_bbo_monitor.ts`  
 > **Review triggers:** CLOB or PolyBolt API updates, market microstructure changes, orderbook depth weighting adjustments  
 
 ## Purpose And Non-Goals
@@ -17,7 +17,7 @@ This module defines price valuation, depth imbalance ($DIR_5$), and probability 
 
 **Non-Goals:**
 - It does not infer sequence numbers for the CLOB market channel: that channel documents full `book`/`price_change` events but no monotonic sequence field.
-- It does not place orders or sign transactions (handled by `PolymarketExecution` in `backend/gateway/src/polymarket_execution.ts`).
+- It does not place orders or sign transactions (handled by `PolymarketExecution` in `backend/execution/src/polymarket_execution.ts`).
 - It does not manage wallet private keys or L2 API secrets.
 
 ---
@@ -29,8 +29,8 @@ This module defines price valuation, depth imbalance ($DIR_5$), and probability 
 | `calculatePolymarketReferencePrice(bestBid, bestAsk, lastTradePrice)` | `shared/lib/strategy/polymarket_clob_model.js` | Returns `{ referencePrice, source: 'midpoint' \| 'last_trade' \| 'bid' \| 'ask' \| 'default', spread }`. |
 | `calculateDepthImbalance(bids, asks, depth)` | `shared/lib/strategy/polymarket_clob_model.js` | Computes $DIR_5 \in [-1, 1]$, microPrice, and best bid/ask levels. |
 | `forecastBinaryProbability(pMid, dir5, ofiZ, weights)` | `shared/lib/strategy/polymarket_clob_model.js` | Computes bounded logit drift with pin-risk tail clamping ($< 0.03$ or $> 0.97$). |
-| `PolymarketAdapter.getQuote(symbol)` | `backend/gateway/src/adapters/polymarket_adapter.ts` | Fetches the CLOB orderbook and returns the numeric reference price. Rich spread/source metadata remains owned by the model helpers above. |
-| `startPolyBoltBboMonitor(options)` | `backend/gateway/src/polymarket/polybolt_bbo_monitor.ts` | Tracks the documented dense `price.polymarket` sequence per connection/channel; a gap invalidates all subscribed BBO/depth caches, fetches public REST orderbooks, then reconnects into a fresh epoch. |
+| `PolymarketAdapter.getQuote(symbol)` | `backend/execution/src/adapters/polymarket_adapter.ts` | Fetches the CLOB orderbook and returns the numeric reference price. Rich spread/source metadata remains owned by the model helpers above. |
+| `startPolyBoltBboMonitor(options)` | `backend/execution/src/polymarket/polybolt_bbo_monitor.ts` | Tracks the documented dense `price.polymarket` sequence per connection/channel; a gap invalidates all subscribed BBO/depth caches, fetches public REST orderbooks, then reconnects into a fresh epoch. |
 
 ### Mathematical Reference Pricing Formulation
 

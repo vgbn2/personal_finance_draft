@@ -66,7 +66,7 @@ Directly imported from `legacy.html` and expanded for Sovereign Phase 4.
   - `Audit Log` [06]
 - **Global Actions:**
   - `[BUTTON]` Ingest Snapshot (Triggers `backend/scripts/data_ops/ingest_market_data.js`)
-  - `[BUTTON]` Run Comparison (Triggers `backend/cli/sovereign_cli.js model compare`)
+  - `[BUTTON]` Run Comparison (Triggers `frontend/cli-tui/sovereign_cli.js model compare`)
   - `[PILL]` Status indicator: `LIVE` (Green pulse) or `HYDRATING` (Amber spin).
 
 ### 3.3 The Configuration Sidebar (`.sidebar`)

@@ -70,7 +70,7 @@ Autonomous scripts, cron jobs, or container runners can invoke the explorer dire
 
 ```bash
 # Run a single discovery cycle and output JSON
-node backend/cli/sovereign_cli.js strategy explore --once --json
+node frontend/cli-tui/sovereign_cli.js strategy explore --once --json
 
 # Run continuous 30-minute background daemon
 npm run strategy:explore -- --interval 30
@@ -81,7 +81,7 @@ If an AI agent creates a new strategy hypothesis independently, it can:
 1. Write a canonical YAML definition to `config/strategies/<custom_name>.yaml`.
 2. Execute the native C++ backtester:
    ```bash
-   node backend/cli/sovereign_cli.js bt --strategy config/strategies/<custom_name>.yaml --timeframe 1h --sample --json
+   node frontend/cli-tui/sovereign_cli.js bt --strategy config/strategies/<custom_name>.yaml --timeframe 1h --sample --json
    ```
 3. Evaluate metrics (win rate, Sharpe, Sortino, max drawdown, tail risk).
 

@@ -2,7 +2,7 @@
 
 > **Status:** Implemented
 > **Audience:** Maintainers, API Developers, Security Auditors, Quantitative Engineers
-> **Canonical owners:** `backend/core/src/data/data_validator.hpp`, `backend/core/src/data/binary_ts_merger.cpp`, `backend/core/src/data/binary_ts_reader.cpp`, `backend/api/server/services/cli_executor.js`, `backend/api/server/services/input_validator.js`
+> **Canonical owners:** `backend/cpp_core/src/data/data_validator.hpp`, `backend/cpp_core/src/data/binary_ts_merger.cpp`, `backend/cpp_core/src/data/binary_ts_reader.cpp`, `backend/api/server/services/cli_executor.js`, `backend/api/server/services/input_validator.js`
 > **Review triggers:** File I/O interfaces, native subprocess execution, flat binary time-series schema, cryptographic hashing, query parsing
 
 ## Purpose And Non-Goals
@@ -26,11 +26,11 @@ This module provides boundary defense against binary poisoning, argument injecti
 
 | Surface | Owner | Contract |
 |---|---|---|
-| `DataValidator::isValidRecord(ts, close)` | `backend/core/src/data/data_validator.hpp` | Validates `std::isfinite(ts_ms) && ts_ms >= 0 && std::isfinite(close) && close > 0`. |
-| `DataValidator::sanitizeSymbol(symbol)` | `backend/core/src/data/data_validator.hpp` | Strips path delimiters and normalizes to uppercase alphanumeric characters and underscores. |
-| `DataValidator::sanitizeTimeframe(tf)` | `backend/core/src/data/data_validator.hpp` | Replaces non-alphanumeric characters with underscores. |
-| `BinaryTsReader::sha512File(path, digest, err)` | `backend/core/src/data/binary_ts_reader.cpp` | Computes 128-hex FIPS 180-4 SHA-512 digest for regular binary files; rejects symlink targets. |
-| `BinaryTsMerger::mergeFiles(ex, in, out, opts)` | `backend/core/src/data/binary_ts_merger.cpp` | Merges two binary time-series streams in $O(N+M)$ time while discarding NaN/Inf records. |
+| `DataValidator::isValidRecord(ts, close)` | `backend/cpp_core/src/data/data_validator.hpp` | Validates `std::isfinite(ts_ms) && ts_ms >= 0 && std::isfinite(close) && close > 0`. |
+| `DataValidator::sanitizeSymbol(symbol)` | `backend/cpp_core/src/data/data_validator.hpp` | Strips path delimiters and normalizes to uppercase alphanumeric characters and underscores. |
+| `DataValidator::sanitizeTimeframe(tf)` | `backend/cpp_core/src/data/data_validator.hpp` | Replaces non-alphanumeric characters with underscores. |
+| `BinaryTsReader::sha512File(path, digest, err)` | `backend/cpp_core/src/data/binary_ts_reader.cpp` | Computes 128-hex FIPS 180-4 SHA-512 digest for regular binary files; rejects symlink targets. |
+| `BinaryTsMerger::mergeFiles(ex, in, out, opts)` | `backend/cpp_core/src/data/binary_ts_merger.cpp` | Merges two binary time-series streams in $O(N+M)$ time while discarding NaN/Inf records. |
 | `isPathWithinAllowedRoots(path, roots)` | `backend/api/server/services/input_validator.js` | Confines target path to `[REPO_ROOT, STORAGE_DATA_DIR, os.tmpdir()]`. |
 | `isValidSymbol(symbol)` / `isValidTimeframe(tf)` | `backend/api/server/services/input_validator.js` | Strict regex validation prohibiting option injection (`-` prefixes) and directory slashes. |
 | `isFormulaInjection(val)` / `sanitizeCsvCell(val)` | `shared/lib/security/normalized.js` | Detects and neutralizes spreadsheet formula injection (CWE-1236) via `'` apostrophe prefixing. |
@@ -101,7 +101,7 @@ When exporting data frames, feature matrices, or ledger balances to CSV:
 ## Code Snippets & Comment Implementation
 
 ### C++ Two-Pointer Streaming Merge with NaN Filtering
-From `backend/core/src/data/binary_ts_merger.cpp`:
+From `backend/cpp_core/src/data/binary_ts_merger.cpp`:
 ```cpp
 // [DSA] Two-Pointer Streaming Merge with Deduplication & NaN Sanitization
 // Algorithmic pattern: Two-pointer sorted stream merge (identical to Merge Sort merge phase).
@@ -173,7 +173,7 @@ for (const field of ['input', 'model_report', 'backtest_report']) {
 
 - **Unit & Boundary Tests**:
   - `tests/scripts/security/binary_injection_guard.test.js`: Verifies `isPathWithinAllowedRoots`, regex argument injection defenses, and `cli_executor.js` fail-closed responses.
-  - `backend/core/test/data/binary_ts_reader_test.cpp`: Verifies FIPS 180-4 SHA-512 digest on reference vector `"abc"`, symlink rejection, and header parsing.
+  - `backend/cpp_core/test/data/binary_ts_reader_test.cpp`: Verifies FIPS 180-4 SHA-512 digest on reference vector `"abc"`, symlink rejection, and header parsing.
 - **Verification Commands**:
   ```bash
   # Execute Node.js security regression test

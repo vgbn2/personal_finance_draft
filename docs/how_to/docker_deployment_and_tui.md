@@ -6,13 +6,13 @@ This guide covers the deployment, secret isolation architecture, interactive Ink
 
 ## 1. Interactive Ink TUI Access Inside Docker
 
-The Sovereign Terminal UI (`backend/cli/sovereign_dashboard.mjs`) is an interactive **React 19 + Ink** terminal application. When running inside Docker, it is fully accessible with interactive keyboard navigation, real-time live streaming output, and ANSI color rendering via Docker's pseudo-TTY.
+The Sovereign Terminal UI (`frontend/cli-tui/sovereign_dashboard.mjs`) is an interactive **React 19 + Ink** terminal application. When running inside Docker, it is fully accessible with interactive keyboard navigation, real-time live streaming output, and ANSI color rendering via Docker's pseudo-TTY.
 
 ### Direct TUI Session Launch
 
 ```bash
 # Attach directly to the interactive Ink TUI dashboard inside the container:
-docker exec -it sv-allinone node backend/cli/sovereign_dashboard.mjs
+docker exec -it sv-allinone node frontend/cli-tui/sovereign_dashboard.mjs
 ```
 
 ### How It Works Under the Hood
@@ -26,13 +26,13 @@ You can also run any CLI command directly inside the running container:
 
 ```bash
 # View multi-broker status, balances, and system doctor diagnostics:
-docker exec -it sv-allinone node backend/cli/sovereign_cli.js status
+docker exec -it sv-allinone node frontend/cli-tui/sovereign_cli.js status
 
 # Start live multi-family streaming quotes:
-docker exec -it sv-allinone node backend/cli/sovereign_cli.js watch
+docker exec -it sv-allinone node frontend/cli-tui/sovereign_cli.js watch
 
 # Run strategy backtest:
-docker exec -it sv-allinone node backend/cli/sovereign_cli.js bt --strategy low_prob_dip --symbol EURUSD --timeframe 1d
+docker exec -it sv-allinone node frontend/cli-tui/sovereign_cli.js bt --strategy low_prob_dip --symbol EURUSD --timeframe 1d
 ```
 
 ---
@@ -110,7 +110,7 @@ To guarantee that **no credentials or API keys ever leak into Docker images or b
 All secrets reside exclusively on the host filesystem at `/etc/sovereign/sovereign.env`:
 - **Owner**: `root:root`
 - **POSIX Permissions**: `0600` (`-rw-------`). No group read, no world read.
-- **Enforcement**: The deployment script (`scripts/deploy/deploy_proxmox.sh`) verifies the octal file permissions before starting the container. If permissions allow world/group access, deployment aborts immediately.
+- **Enforcement**: The deployment script (`tools/deploy/deploy_proxmox.sh`) verifies the octal file permissions before starting the container. If permissions allow world/group access, deployment aborts immediately.
 
 ### Production Environment Variables Template
 
@@ -194,7 +194,7 @@ docker run -d --name sv-wealth-test \
 
 3. **Verify Interactive TUI Inside Test Instance**:
    ```bash
-   docker exec -it sv-wealth-test node backend/cli/sovereign_dashboard.mjs
+   docker exec -it sv-wealth-test node frontend/cli-tui/sovereign_dashboard.mjs
    ```
 
 4. **Verify Storage Sandboxing**:

@@ -19,8 +19,8 @@ Risk managers, quantitative researchers, C++20 systems engineers, and algorithmi
 ### 1.4 System Scope
 Encompasses:
 1. **Virtual Sub-Positions Ledger** (`shared/lib/runtime/sub_positions_ledger.js`): Multi-strategy position isolation, PnL attribution, and physical broker inventory reconciliation.
-2. **Native Pre-Trade Risk Engine** (`backend/core/src/risk/pre_trade_risk.cpp`): Microsecond risk validation (<15µs) enforcing portfolio drawdown limits, position concentration caps, and stale quote fences.
-3. **Emergency Kill Switch Circuit** (`backend/core/src/execution/kill_switch.hpp`): Immediate trading suspension and atomic risk state locking.
+2. **Native Pre-Trade Risk Engine** (`backend/cpp_core/src/risk_management/pre_trade_risk.cpp`): Microsecond risk validation (<15µs) enforcing portfolio drawdown limits, position concentration caps, and stale quote fences.
+3. **Emergency Kill Switch Circuit** (`backend/cpp_core/src/execution/kill_switch.hpp`): Immediate trading suspension and atomic risk state locking.
 
 ### 1.5 References
 - [Product Software Requirements Specification](product_specification.md)
@@ -88,7 +88,7 @@ flowchart TD
   - *Processing*: Translates sub-position modifications into minimal delta orders dispatched to physical broker gateways.
 
 - **FR-RSK-003 (Atomic Ledger Persistence)**:
-  - *Description*: The sub-positions ledger state MUST be serialized to disk (`storage/data/paper_trading/sub_positions.json`) protected by POSIX atomic file locking.
+  - *Description*: The sub-positions ledger state MUST be serialized to disk (`storage/data/paper_trading/.../sub_positions.json`) protected by POSIX atomic file locking.
 
 ### 3.2 Pre-Trade Risk Engine Invariants
 - **FR-RSK-004 (Maximum Portfolio Drawdown Fence)**:
@@ -155,11 +155,11 @@ namespace sovereign::risk {
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
 | `FR-RSK-001` | Strategy Attribution Tagging | Integration Test | `node tests/run_node_tests.js tests/runtime/sub_positions.test.js` |
-| `FR-RSK-002` | Physical Net Reconciliation | Unit Test | `tests/runtime/sub_positions.test.js` |
-| `FR-RSK-003` | Atomic Ledger Persistence | Storage Test | `tests/runtime/sub_positions.test.js` |
-| `FR-RSK-004` | Max Drawdown Fence (<15%) | CTest Unit Test | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `FR-RSK-005` | Max Single-Position Cap | CTest Unit Test | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `FR-RSK-006` | Stale Quote Fence (<5000ms) | CTest Unit Test | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `FR-RSK-007` | Kill Switch Circuit Breaker | Safety Test | `backend/core/tests/test_kill_switch.cpp` |
-| `NFR-RSK-001` | Risk Gate Latency (<15µs) | CTest Benchmark | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `NFR-RSK-002` | Zero Heap Allocation | Memory Inspection | `backend/core/tests/test_pre_trade_risk.cpp` |
+| `FR-RSK-002` | Physical Net Reconciliation | Unit Test | `tests/scripts/lib/sub_positions_ledger.test.js` |
+| `FR-RSK-003` | Atomic Ledger Persistence | Storage Test | `tests/scripts/lib/sub_positions_ledger.test.js` |
+| `FR-RSK-004` | Max Drawdown Fence (<15%) | CTest Unit Test | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `FR-RSK-005` | Max Single-Position Cap | CTest Unit Test | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `FR-RSK-006` | Stale Quote Fence (<5000ms) | CTest Unit Test | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `FR-RSK-007` | Kill Switch Circuit Breaker | Safety Test | `backend/cpp_core/test/risk/kill_switch_test.cpp` |
+| `NFR-RSK-001` | Risk Gate Latency (<15µs) | CTest Benchmark | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `NFR-RSK-002` | Zero Heap Allocation | Memory Inspection | `backend/cpp_core/test/risk/risk_test.cpp` |

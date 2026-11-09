@@ -11,7 +11,7 @@ Sovereign uses Node.js's native test runner (`node:test`) and CMake CTest for na
 ### Zero-Key Test Rule
 All test suites run **100% offline with zero external API credentials**:
 - Market data tests read from recorded fixtures (`tests/fixtures/`, `storage/data/cache/last_fetch.json`).
-- Prediction market tests run against the virtual paper ledger (`backend/gateway/src/paper_ledger.js`).
+- Prediction market tests run against the virtual paper ledger (`backend/execution/src/paper_ledger.js`).
 - Broker execution tests use in-process TCP/HTTP mock bridges (e.g., `tests/fixtures/mock_mt5_bridge.js`).
 
 ### Running Test Suites
@@ -19,7 +19,7 @@ All test suites run **100% offline with zero external API credentials**:
 ```bash
 # 1. Structure & Hygiene Tests (File contracts, linters, import validation)
 npm run test:structure
-node scripts/dev/check_hygiene.js
+node tools/dev/check_hygiene.js
 
 # 2. Market Data & Validation Tests
 npm run test:data

@@ -26,7 +26,7 @@ Tokens are hashed using `scrypt` with a random 16-byte hex salt and verified usi
 Run the built-in sovereign CLI command:
 
 ```bash
-node backend/cli/sovereign_cli.js auth service create \
+node frontend/cli-tui/sovereign_cli.js auth service create \
   --id "analyst-alice" \
   --capabilities "status.read,data.read,research.read,research.run"
 ```
@@ -46,13 +46,13 @@ Output:
 ### List Active Principals
 
 ```bash
-node backend/cli/sovereign_cli.js auth service list
+node frontend/cli-tui/sovereign_cli.js auth service list
 ```
 
 ### Revoke a Key
 
 ```bash
-node backend/cli/sovereign_cli.js auth service revoke --id "analyst-alice"
+node frontend/cli-tui/sovereign_cli.js auth service revoke --id "analyst-alice"
 ```
 
 ---
@@ -112,7 +112,7 @@ When outside users connect from external networks (non-loopback IP, e.g. remote 
 For outside automated scripts, remote AI copilots, or external third-party integrations:
 1. The host operator provisions a personal API token via CLI:
    ```bash
-   node backend/cli/sovereign_cli.js auth service create \
+   node frontend/cli-tui/sovereign_cli.js auth service create \
      --id "client-external-hedge" \
      --capabilities "status.read,data.read,research.read"
    ```
@@ -123,7 +123,7 @@ For outside automated scripts, remote AI copilots, or external third-party integ
    ```
 4. If an external token is compromised, revoke it immediately without restarting services:
    ```bash
-   node backend/cli/sovereign_cli.js auth service revoke --id "client-external-hedge"
+   node frontend/cli-tui/sovereign_cli.js auth service revoke --id "client-external-hedge"
    ```
 
 ---

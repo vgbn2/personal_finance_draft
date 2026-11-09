@@ -17,8 +17,8 @@ It does not decide whether an engineering claim is true, generate documentation,
 |---|---|---|
 | `buildDocsIndex(options)` | `shared/lib/ai/docs_rag_indexer.js` | Builds a TF-IDF index for `canonical`, `historical`, `all`, or explicit `dirs` input. |
 | `searchDocs(query, options)` | `shared/lib/ai/docs_rag_indexer.js` | Returns ranked local chunks from a supplied or cached index. |
-| `scripts/dev/build_docs_rag_index.js` | script entrypoint | Builds the default manifest-selected corpus and writes the local ignored cache. |
-| `scripts/dev/audit_documentation.js` | documentation validator | Checks tree ownership, manifest references, and Atlas record contracts. |
+| `tools/dev/build_docs_rag_index.js` | script entrypoint | Builds the default manifest-selected corpus and writes the local ignored cache. |
+| `tools/dev/audit_documentation.js` | documentation validator | Checks tree ownership, manifest references, and Atlas record contracts. |
 
 Explicit `dirs: [...]` remains a compatibility override for bounded callers and tests. It is labeled `corpus: explicit` and cache-bound to the normalized input roots.
 
@@ -82,7 +82,7 @@ const index = buildDocsIndex({ save: false, corpus: 'historical' });
 
 - `tests/scripts/tools/docs_rag.test.js`
 - `tests/scripts/architecture/cli/core/documentation_contract.test.js`
-- `node scripts/dev/audit_documentation.js`
+- `node tools/dev/audit_documentation.js`
 
 Current evidence is working-tree source/test proof based on commit `9fea4a90cbe92cddb0c401db5ef2d3b631427689`. It is not committed-archive, CI, host, deployment, or soak proof.
 

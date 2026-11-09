@@ -19,7 +19,7 @@ Each asset resolves to a canonical symbol format (e.g. `SPY`, `BTC/USD`, `ETH/US
 1. **Binary TS Index (`storage/data/ts/*.bin`)**:
    - 8-byte magic header: `SOVT\x01\x00\x00\x00`
    - 48-byte packed records: timestamp (uint64_le), open, high, low, close, volume (float64_le)
-   - Zero-allocation two-pointer streaming merger (`backend/core/src/data/binary_ts_merger.cpp`)
+   - Zero-allocation two-pointer streaming merger (`backend/cpp_core/src/data/binary_ts_merger.cpp`)
 2. **JSON Cache (`storage/data/cache/*.json`)**:
    - Rapid-inspection caches for indicators, backtest fixtures, and recent market snapshots.
    - Machine-written snapshots use compact JSON while preserving parsed content and atomic replacement.

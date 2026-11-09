@@ -21,16 +21,16 @@ Frontend/
 
 ## Active Subsystem Entrypoints
 
-1. **Dashboard Root App (`Frontend/dashboard/src/App.tsx`):**
+1. **Dashboard Root App (`frontend/dashboard/src/App.tsx`):**
    - Renders the responsive multi-panel layout (Market Watch, Backtest Workspace, Strategy Performance, Order Matrix).
 
-2. **API & Telemetry Client (`Frontend/dashboard/src/lib/api.ts`):**
+2. **API & Telemetry Client (`frontend/dashboard/src/lib/api.ts`):**
    - Wraps HTTP REST calls (`/api/status`, `/api/backtest`, `/api/market/bars`) and Socket.IO real-time event subscriptions.
 
-3. **Production Build Artifact (`Frontend/dashboard/dist/`):**
+3. **Production Build Artifact (`frontend/dashboard/dist/`):**
    - Compiled production bundle served statically by `backend/api/app.js` at runtime.
 
 ## Code Atlas & Related Maps
 
-- API Route Reference — [`docs/engineering/specs/web_api.md`](../../engineering/specs/web_api.md)
+- API Route Reference — [`docs/reference/api/web_rest_and_websocket_api.md`](../../reference/api/web_rest_and_websocket_api.md)
 - Terminal Dashboard Interface — [`docs/sections/interface/terminal-dashboard/README.md`](../interface/terminal-dashboard/README.md)

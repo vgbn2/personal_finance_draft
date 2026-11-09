@@ -46,7 +46,7 @@ flowchart LR
     INV1 --- INV2 --- INV3 --- INV4 --- INV5
 ```
 
-1. **Zero-Key Local Development**: Development, unit testing, and backtesting run keyless against recorded fixtures (`tests/fixtures/`, `storage/data/cache/last_fetch.json`) and virtual paper ledgers (`backend/gateway/src/paper_ledger.js`).
+1. **Zero-Key Local Development**: Development, unit testing, and backtesting run keyless against recorded fixtures (`tests/fixtures/`, `storage/data/cache/last_fetch.json`) and virtual paper ledgers (`backend/execution/src/paper_ledger.js`).
 2. **Single-Writer Authority (`central-host`)**: Exactly one primary host holds write privileges for binary TS files (`storage/data/ts/*.bin`) protected by atomic POSIX locking (`O_EXCL`).
 3. **Fail-Closed Execution Safety**: Live capital order dispatch strictly requires three layers: salted SHA-256 PIN matching, `SOVEREIGN_EXECUTION_AUTHORIZED=true`, and Pre-Trade Risk validation (<15µs evaluation latency).
 4. **Virtual Sub-Positions Isolation**: Multi-strategy position inventory is segregated on single physical broker assets using deterministic attribution keys (`strat_<id>_<timeframe>_<timestamp>_<entropy>`).
@@ -170,7 +170,7 @@ flowchart LR
 | `FR-PROD-006` | Native Vector Backtester | CTest Benchmark | `npm run test:core` (34 CTests) |
 | `FR-PROD-007` | Monte Carlo Resampling | CTest Unit Test | `npm run test:core` |
 | `FR-PROD-008` | Multi-Broker Adaptation | Gateway Suite | `npm run test:api` |
-| `NFR-PROD-001` | Risk Gate Latency (<15µs) | CTest Performance Test | `backend/core/tests/test_pre_trade_risk.cpp` |
-| `NFR-PROD-002` | Backtest Throughput | CTest Performance Test | `backend/core/tests/test_frame_backtester.cpp` |
-| `NFR-PROD-003` | TS Merger Memory ($<5\text{MB}$) | C++ Memory Test | `backend/core/tests/test_binary_ts_merger.cpp` |
+| `NFR-PROD-001` | Risk Gate Latency (<15µs) | CTest Performance Test | `backend/cpp_core/test/risk/risk_test.cpp` |
+| `NFR-PROD-002` | Backtest Throughput | CTest Performance Test | `backend/cpp_core/test/backtest/frame_backtester_test.cpp` |
+| `NFR-PROD-003` | TS Merger Memory ($<5\text{MB}$) | C++ Memory Test | `backend/cpp_core/test/data/binary_ts_merger_test.cpp` |
 | `NFR-PROD-006` | Zero-False-Positive Gate | Integrity Scanner | `npm run hygiene && npm run test:structure` |

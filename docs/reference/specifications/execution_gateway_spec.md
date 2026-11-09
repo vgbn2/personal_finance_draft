@@ -140,13 +140,13 @@ Order status states MUST follow deterministic finite state machine:
 ### 6.1 Verification Matrix
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
-| `FR-GW-001` | 3-Tier Fail-Closed Auth | Automated Safety Test | `tests/safety/fail_closed.test.js` |
-| `FR-GW-002` | Emergency Kill Switch | Integration Test | `tests/safety/kill_switch.test.js` |
-| `FR-GW-003` | Strategy Attribution Tagging | Contract Test | `tests/gateway/order_tagging.test.js` |
-| `FR-GW-004` | Order Idempotency | Unit Test | `tests/gateway/idempotency.test.js` |
-| `FR-GW-005` | Alpaca Adapter | Fixture Test | `tests/gateway/alpaca_adapter.test.js` |
-| `FR-GW-006` | Polymarket CLOB Bridge | Offline Fixture Test | `tests/gateway/polymarket.test.js` |
-| `FR-GW-007` | MT5 NDJSON Protocol | TCP Mock Test | `tests/gateway/mt5_bridge.test.js` |
-| `FR-GW-008` | Paper Trading Simulator | Ledger Test | `backend/gateway/src/paper_ledger.js` |
+| `FR-GW-001` | 3-Tier Fail-Closed Auth | Automated Safety Test | `tests/scripts/safety/automation_guard.test.js` |
+| `FR-GW-002` | Emergency Kill Switch | Integration Test | `tests/scripts/integration/engine/live_guard.test.js` |
+| `FR-GW-003` | Strategy Attribution Tagging | Contract Test | `tests/scripts/lib/sub_positions_ledger.test.js` |
+| `FR-GW-004` | Order Idempotency | Unit Test | `tests/scripts/integration/trading/proposed_orders.test.js` |
+| `FR-GW-005` | Alpaca Adapter | Fixture Test | `tests/scripts/integration/trading/alpaca_env_scope.test.js` |
+| `FR-GW-006` | Polymarket CLOB Bridge | Offline Fixture Test | `tests/scripts/integration/polymarket/polymarket_paper.test.js` |
+| `FR-GW-007` | MT5 NDJSON Protocol | TCP Mock Test | `tests/scripts/integration/mt5/mt5_bridge_lifecycle.test.js` |
+| `FR-GW-008` | Paper Trading Simulator | Ledger Test | `backend/execution/src/paper_ledger.js` |
 | `NFR-GW-001` | Dispatch Latency (<5ms) | Benchmark Test | `npm run test:api` |
 | `NFR-GW-003` | Heartbeat Disconnect Safety | Reconnect Stress Test | `npm run test:safety` |

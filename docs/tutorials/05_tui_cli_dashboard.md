@@ -1,6 +1,6 @@
 # Module 05 — CLI & TUI Dispatch
 
-For "which commands exist and do they currently work," read `docs/engineering/specs/tui_feature_map.md` first
+For "which commands exist and do they currently work," read `docs/reference/specifications/tui_feature_map.md` first
 — it's a maintained, dated PASS/PARTIAL/BROKEN table (last full pass 2026-06-11; missing the chat
 suggestion dropdown, the legacy-engine switch, the chart upgrade, and the Alpaca position tracker added
 in sessions 55-58 — known gap, not yet refreshed). This module covers the *mechanism*, not the inventory.
@@ -9,7 +9,7 @@ in sessions 55-58 — known gap, not yet refreshed). This module covers the *mec
 
 The canonical modern-dashboard contract is [Terminal Dashboard](../sections/interface/terminal-dashboard/README.md). This tutorial focuses on tracing both engines and their historical traps.
 
-`backend/cli/sovereign_cli.js`. Non-TTY (CI, pipes) always gets the legacy menu. Otherwise,
+`frontend/cli-tui/sovereign_cli.js`. Non-TTY (CI, pipes) always gets the legacy menu. Otherwise,
 `loadSettings().layout === 'legacy'` (or `LEGACY_TUI=1` env) spawns the old `runInteractiveMenu()`
 engine; anything else spawns `sovereign_dashboard.mjs` as a child process. The boot loop only relaunches
 the other engine if the layout setting actually *changed* during that run — a naive "always relaunch"
@@ -22,7 +22,7 @@ This has caused real bugs more than once. There are **two separate, unrelated co
 | | File | Used by |
 |---|---|---|
 | The Ink dashboard's own model | a constant called `M`, inline inside `sovereign_dashboard.mjs` | Only the modern Ink dashboard |
-| `COMMAND_MANIFEST` | `backend/cli/tui/manifest.js` | Only the legacy `runInteractiveMenu()` engine |
+| `COMMAND_MANIFEST` | `frontend/cli-tui/tui/manifest.js` | Only the legacy `runInteractiveMenu()` engine |
 
 **Editing `manifest.js` does nothing to the dashboard, and editing the dashboard's `M` does nothing to
 the legacy menu.** This exact mistake produced a real bug in session 57: a position-tracker menu entry
@@ -64,7 +64,7 @@ quirk, so source/test proof remains distinct from real-terminal qualification.
 ## Labs
 
 **Lab 1 — prove the two-manifest trap to yourself.** Open both `sovereign_dashboard.mjs` (search for
-`const M =`) and `tui/manifest.js` (search for `COMMAND_MANIFEST`). Pick one command that exists in
+`const M =`) and `frontend/cli-tui/tui/manifest.js` (search for `COMMAND_MANIFEST`). Pick one command that exists in
 *only one* of them. What happens if you try to invoke it from the other engine?
 
 **Lab 2 — read `INTERACTIVE_CMDS` and predict behavior before running anything.** For each entry

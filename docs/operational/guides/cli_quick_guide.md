@@ -1,18 +1,18 @@
 # CLI Quick Guide
 
-The CLI lives in `backend/cli/sovereign_cli.js`.
+The CLI lives in `frontend/cli-tui/sovereign_cli.js`.
 
 ## First Commands
 
 ```bash
 # From repository root:
-node backend/cli/sovereign_cli.js help
-node backend/cli/sovereign_cli.js status
-node backend/cli/sovereign_cli.js cockpit
-node backend/cli/sovereign_cli.js help commands
-node backend/cli/sovereign_cli.js help backtest
-node backend/cli/sovereign_cli.js help indicators
-node backend/cli/sovereign_cli.js help examples
+node frontend/cli-tui/sovereign_cli.js help
+node frontend/cli-tui/sovereign_cli.js status
+node frontend/cli-tui/sovereign_cli.js cockpit
+node frontend/cli-tui/sovereign_cli.js help commands
+node frontend/cli-tui/sovereign_cli.js help backtest
+node frontend/cli-tui/sovereign_cli.js help indicators
+node frontend/cli-tui/sovereign_cli.js help examples
 ```
 
 ## Main Commands
@@ -48,17 +48,17 @@ node backend/cli/sovereign_cli.js help examples
 
 ```bash
 # Sovereign CLI commands (via npm bin or direct node path)
-node backend/cli/sovereign_cli.js status
-node backend/cli/sovereign_cli.js cockpit
-node backend/cli/sovereign_cli.js check --strict
-node backend/cli/sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
-node backend/cli/sovereign_cli.js bt --input storage/data/cache/backtest_history.json --timeframe 1d
-node backend/cli/sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
-node backend/cli/sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
-node backend/cli/sovereign_cli.js mass-bt --symbols SPY,QQQ,BTC/USD --timeframes 5m,1h,1d
-node backend/cli/sovereign_cli.js mt5 doctor
-node backend/cli/sovereign_cli.js mt5 positions
-node backend/cli/sovereign_cli.js mt5 balance
+node frontend/cli-tui/sovereign_cli.js status
+node frontend/cli-tui/sovereign_cli.js cockpit
+node frontend/cli-tui/sovereign_cli.js check --strict
+node frontend/cli-tui/sovereign_cli.js backfill --timeframe 1d --days 365 --include-prediction --relevance-floor 0.30
+node frontend/cli-tui/sovereign_cli.js bt --input storage/data/cache/backtest_history.json --timeframe 1d
+node frontend/cli-tui/sovereign_cli.js bt --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node frontend/cli-tui/sovereign_cli.js optimize --sample --sample-size 1000 --train-ratio 0.7 --timeframe 1d
+node frontend/cli-tui/sovereign_cli.js mass-bt --symbols SPY,QQQ,BTC/USD --timeframes 5m,1h,1d
+node frontend/cli-tui/sovereign_cli.js mt5 doctor
+node frontend/cli-tui/sovereign_cli.js mt5 positions
+node frontend/cli-tui/sovereign_cli.js mt5 balance
 ```
 
 ## Output Metrics

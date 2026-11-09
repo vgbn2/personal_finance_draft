@@ -6,7 +6,7 @@ This document specifies the architecture of the autonomous quantitative alpha di
 
 ## 1. Autonomous AI Strategy Explorer Architecture
 
-Sovereign includes an autonomous discovery daemon (`scripts/strategies/auto_strategy_explorer.js`) that runs continuously (e.g. 30-minute interval on HPDesk) or on-demand via CLI and MCP tooling to research novel market anomalies, backtest them using the zero-allocation native C++20 engine, and automatically persist valid YAML strategy registries into `config/strategies/automated/`.
+Sovereign includes an autonomous discovery daemon (`tools/strategies/auto_strategy_explorer.js`) that runs continuously (e.g. 30-minute interval on HPDesk) or on-demand via CLI and MCP tooling to research novel market anomalies, backtest them using the zero-allocation native C++20 engine, and automatically persist valid YAML strategy registries into `config/strategies/automated/`.
 
 ```mermaid
 flowchart TD

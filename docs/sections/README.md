@@ -20,4 +20,4 @@ Domain sections explain one source-owned capability across its entrypoint, imple
 - [Correlation analysis](research/correlation-analysis/README.md) — local snapshot selection, alignment preflight, native matrix execution, and correlation provenance.
 - [Backtest execution](research/backtest-execution/README.md) — CLI orchestration, feature-frame splits, JavaScript/native dispatch, metrics, and degraded-mode evidence.
 
-Each section must declare its owners and review triggers in `docs/documentation_manifest.json`. Historical session evidence stays in `workspace/`; tutorials stay in `docs/codebase_tour/`.
+Each section must declare its owners and review triggers in `docs/documentation_manifest.json`. Historical session evidence stays in `workspace/`; tutorials stay in `docs/tutorials/`.

@@ -59,7 +59,7 @@ flowchart TD
 ```
 
 ### 2.2 Subsystem Functions
-- **Declarative Creator Resolution**: Resolves creator handles and channel IDs from `config/research/creators.yaml`.
+- **Declarative Creator Resolution**: Resolves creator handles and channel IDs from `configs/research/creators.yaml`.
 - **Zero-Key TimedText Captions**: Fetches timed subtitle tracks directly from public XML endpoints.
 - **Local Audio Fallback**: Transcribes 16kHz mono audio using local `whisper.cpp` models when subtitles are disabled.
 - **Transactional Warehouse**: Batches video metadata and compressed transcript BLOBs into SQLite WAL database.
@@ -71,7 +71,7 @@ flowchart TD
 ### 3.1 Creator Resolution & Format Validation
 - **FR-SOC-001 (Channel ID Validation & Resolution)**:
   - *Description*: The creator resolver MUST validate YouTube channel IDs against regex `/^UC[A-Za-z0-9_-]{22}$/` and resolve custom handles (`@handle`) via zero-key HTML extraction.
-  - *Input*: YAML declarations in `config/research/creators.yaml` and `config/research/creators/*.yaml`.
+  - *Input*: YAML declarations in `configs/research/creators.yaml` and `configs/research/creators/*.yaml`.
   - *Output*: Normalized metadata in `storage/data/cache/creators_resolved.json`.
 
 ### 3.2 Ingestion & Caption Extraction
@@ -81,7 +81,7 @@ flowchart TD
     yt-dlp --skip-download --write-auto-subs --sub-lang en --sub-format ttml -o "%(id)s" "https://www.youtube.com/watch?v=VIDEO_ID"
     ```
 - **FR-SOC-003 (Local Audio Transcription Fallback)**:
-  - *Description*: When subtitles are unavailable, the worker MUST extract 16kHz mono audio (`yt-dlp -x --audio-format wav --audio-quality 16K`) and transcribe locally using `whisper.cpp` (`models/ggml-base.en.bin`).
+  - *Description*: When subtitles are unavailable, the worker MUST extract 16kHz mono audio (`yt-dlp -x --audio-format wav --audio-quality 16K`) and transcribe locally using `whisper.cpp` (`models/.../ggml-base.en.bin`).
 
 ### 3.3 Persistence & Transaction Boundaries
 - **FR-SOC-004 (Transactional SQLite WAL Storage)**:
@@ -125,9 +125,9 @@ npm run test:social           # Run Social Alpha unit & benchmark tests
 ### 6.1 Verification Matrix
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
-| `FR-SOC-001` | Channel ID Regex Validation | Unit Test | `tests/analysis/creator_resolver.test.js` |
+| `FR-SOC-001` | Channel ID Regex Validation | Unit Test | `tests/fixtures/social/creator_reputation_fixture.json` |
 | `FR-SOC-002` | Zero-Key Subtitle Extraction | Integration Test | `npm run test:social` |
 | `FR-SOC-003` | Audio Fallback Pipeline | Automated Mock Test | `npm run test:social` |
 | `FR-SOC-004` | Transactional SQLite Storage | Benchmark Test | `tests/analysis/social_pipeline_bench.test.js` |
-| `NFR-SOC-001` | Concurrency Limit (2 Workers) | Runtime Check | `backend/scripts/data_ops/ingest_social_data/worker_pool.js` |
+| `NFR-SOC-001` | Concurrency Limit (2 Workers) | Runtime Check | `backend/scripts/data_ops/ingest_social_data/index.js` |
 | `NFR-SOC-002` | DB Throughput Benchmark | Benchmark Test | `tests/analysis/social_pipeline_bench.test.js` |

@@ -132,7 +132,7 @@ grain is fresh enough to skip provider polling, so WebSocket activity cannot str
 
 Maintenance backfills may pass `--binary-only` to retain binary TS and quality-report writes
 without rewriting legacy JSON history. The default remains unchanged. Container source sync uses
-`scripts/ops/sync_local_deploy.sh`; its guarded archive excludes runtime storage, dependencies,
+`tools/operational/sync_local_deploy.sh`; its guarded archive excludes runtime storage, dependencies,
 build output, and generated artifacts. Native merger buffering is heap-backed; descriptor-level
 `fsync` remains deferred pending a verified cross-platform stream/descriptor abstraction.
 

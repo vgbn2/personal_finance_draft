@@ -28,7 +28,7 @@
 | `ethers` | `^6.17.0` | Ethereum cryptographic utilities for Polymarket EIP-712 order signing. |
 | `@modelcontextprotocol/sdk` | `^1.29.0` | Model Context Protocol (MCP) server for Claude and autonomous agent tool exposure. |
 
-### Frontend Dashboard (`Frontend/dashboard/package.json`)
+### Frontend Dashboard (`frontend/dashboard/package.json`)
 | Technology | Version | Purpose |
 |---|---|---|
 | `React` | `^19.0.1` | Component-driven reactive web user interface. |

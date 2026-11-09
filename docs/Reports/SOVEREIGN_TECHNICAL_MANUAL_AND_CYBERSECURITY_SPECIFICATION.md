@@ -444,17 +444,17 @@ The platform operates as a distributed fleet of dedicated micro-services and dae
 | Service Name | Primary Entrypoint | Runtime Environment | Heap Limit | Responsibilities & Invariants |
 |---|---|---|---|---|
 | **`sv-web`** | `backend/api/app.js` | Node.js v20 LTS | 512 MB | Serves authenticated REST API routes, brokers WebSocket live feeds, verifies session tokens. |
-| **`sv-backfill`** | `backend/cli/commands/data/backfill_daemon.js` | Node.js v20 LTS | 3,072 MB | Scans universe of 102+ assets every 90 minutes. Skips fresh assets; rolls up derived timeframes. |
-| **`sv-bot-alpaca`**| `backend/cli/commands/runner/run.js` | Node.js v20 LTS | 1,024 MB | Evaluates active trading strategies, queries latest bars, sizes orders, checks pre-trade risk. |
-| **`sv-portfolio-monitor`**| `backend/cli/commands/operational/portfolio_monitor.js`| Node.js v20 | 384 MB | Continuously evaluates broker margins, cash balances, mark-to-market PnL, and drawdowns. |
+| **`sv-backfill`** | `frontend/cli-tui/commands/data/backfill_daemon.js` | Node.js v20 LTS | 3,072 MB | Scans universe of 102+ assets every 90 minutes. Skips fresh assets; rolls up derived timeframes. |
+| **`sv-bot-alpaca`**| `frontend/cli-tui/commands/runner/run.js` | Node.js v20 LTS | 1,024 MB | Evaluates active trading strategies, queries latest bars, sizes orders, checks pre-trade risk. |
+| **`sv-portfolio-monitor`**| `frontend/cli-tui/commands/operational/portfolio_monitor.js`| Node.js v20 | 384 MB | Continuously evaluates broker margins, cash balances, mark-to-market PnL, and drawdowns. |
 | **`sovereign-feedd`**| `backend/go/cmd/sovereign-feedd/main.go` | Go 1.22+ Static | 64 MB | Zero-allocation UDS feed server broadcasting 48-byte SOVT frames to internal consumers. |
-| **`sv-host-health`**| `scripts/ops/host_soak_probe.js` | Node.js v20 LTS | 128 MB | Evaluates open file descriptors, event loop lag, and physical block device write amplification. |
+| **`sv-host-health`**| `tools/operational/host_soak_probe.js` | Node.js v20 LTS | 128 MB | Evaluates open file descriptors, event loop lag, and physical block device write amplification. |
 | **`sv-host-backup`**| `backend/scripts/ops/host_backup.js` | Node.js v20 LTS | 256 MB | Creates daily atomic tarball backups to `/data/backups/`. Aborts if disk space < 1GB or < 5%. |
 | **`sv-cluster`** | `backend/scripts/ops/cluster_heartbeat_daemon.js` | Node.js v20 | 128 MB | Maintains atomic POSIX file lease. Triggers failover election if primary heartbeat expires. |
 
 ### C++ Native Core Memory Layout
 
-In `backend/core/`, data structures are strictly packed to eliminate padding bytes and guarantee cache alignment:
+In `backend/cpp_core/`, data structures are strictly packed to eliminate padding bytes and guarantee cache alignment:
 
 ```cpp
 #pragma pack(push, 8)
@@ -559,7 +559,7 @@ func DecodeRecordZeroAlloc(buf []byte, rec *Record) error {
 
 ## 2.3 External Interfaces & Multi-Broker Gateway Layers
 
-The gateway subsystem (`backend/gateway/src/`) provides strict boundary isolation between external broker APIs and internal execution strategies.
+The gateway subsystem (`backend/execution/src/`) provides strict boundary isolation between external broker APIs and internal execution strategies.
 
 ### Broker Gateway Protocol & Execution Matrix
 
@@ -742,7 +742,7 @@ The private REST and WebSocket gateway enforces granular Role-Based Access Contr
 
 ## 3.3 Cryptographic Standards & Immutable Double-Entry Ledger Verification
 
-All virtual and paper trading activities are captured in an append-only, cryptographically verified double-entry ledger (`backend/gateway/src/polymarket/paper_ledger.ts`).
+All virtual and paper trading activities are captured in an append-only, cryptographically verified double-entry ledger (`backend/execution/src/polymarket/paper_ledger.ts`).
 
 ### Mathematical Formulation of Double-Entry Ledger Invariants
 
@@ -833,7 +833,7 @@ To guarantee consistent microsecond numerical latency and avoid Linux kernel CPU
 
 ## 4.2 Environment Variables, Vault Secrets & Manifest Governance
 
-Environment configuration is strictly validated against `config/system/environment_manifest.json`. The manifest defines exact typing, default values, and security classifications:
+Environment configuration is strictly validated against `configs/system/environment_manifest.json`. The manifest defines exact typing, default values, and security classifications:
 
 <div class="stm32-figure">
 <pre class="stm32-diagram">
@@ -870,7 +870,7 @@ Environment configuration is strictly validated against `config/system/environme
    - `CLUSTER_HEARTBEAT_INTERVAL_MS`: Heartbeat pulse interval across hypervisor nodes (Default: `5000`).
 3. **Group: `secrets` (Sensitive Cryptographic Tokens & Private Keys)**:
    - Reside strictly in `/data/config/.env` or mounted Docker secret files.
-   - Never committed to git; screened by `scripts/dev/check_hygiene.js`.
+   - Never committed to git; screened by `tools/dev/check_hygiene.js`.
 
 ---
 
@@ -1543,7 +1543,7 @@ To eliminate lookahead bias in historical simulations, the store enforces **Bite
 </div>
 
 
-External venue connections are governed by a token-bucket rate limiter (`shared/lib/runtime/rate_limiter.js`):
+External venue connections are governed by a token-bucket rate limiter (`shared/lib/runtime/.../rate_limiter.js`):
 
 $$\text{Tokens}(t) = \min\left(C, \; \text{Tokens}(t_{\text{last}}) + r \cdot (t - t_{\text{last}})\right)$$
 
@@ -1562,7 +1562,7 @@ $$t_{\text{sleep}} = \min\left(10000, \; 500 \cdot 2^{\text{attempt}}\right) \ti
 
 ## 7.1 Continuous Health Checks, Host Soak Telemetry & Leak Probes
 
-The host soak probe daemon (`scripts/ops/host_soak_probe.js`) runs continuously to detect resource leaks before they impact production trading.
+The host soak probe daemon (`tools/operational/host_soak_probe.js`) runs continuously to detect resource leaks before they impact production trading.
 
 <div class="stm32-figure">
 <pre class="stm32-diagram">
@@ -1889,7 +1889,7 @@ Cryptographic drift manifests (`SOVEREIGN_END_TO_END_ARCHITECTURE_REPORT.pdf.man
 | **`FAIL-04`** | `Alpaca Order Rejected: Insufficient Qty Available` | Shares locked in open limit orders; duplicate exit issued | Inspect `bot_state.json` `qty_available` | 1. Cancel conflicting open limit orders.<br/>2. Verify ALPACA-EXIT-01 gate inhibits duplicate dispatch.<br/>3. Wait for broker fill notification. |
 | **`FAIL-05`** | `MT5 Socket Connect Failed: ECONNREFUSED 127.0.0.1:19284` | Headless Wine/Xvfb MetaTrader 5 terminal process crashed | `ps aux \| grep terminal64.exe` | 1. Inspect display :99: `DISPLAY=:99 scrot /tmp/mt5.png`.<br/>2. Restart MT5 bridge: `bash scripts/ops/run_headless_mt5.sh restart`.<br/>3. Verify retcode 10009 in journal. |
 | **`FAIL-06`** | `ERR_DISK_SPACE: Root mount space < 1GB or < 5%` | Host root disk full; fail-closed safety gate engaged | `df -h /` | 1. Execute storage pruning: `node scripts/ops/prune_storage.js`.<br/>2. Prune untagged Docker images: `docker image prune -a`.<br/>3. Verify free space > 5GB. |
-| **`FAIL-07`** | `ERR_LEDGER_HASH_MISMATCH: Cryptographic Chain Broken` | Historical trade ledger file corrupted or tampered | `node -e 'require("./backend/gateway/dist/polymarket/paper_ledger.js").loadLedgerProjection()'` | 1. Freeze trading bot immediately.<br/>2. Restore ledger from latest verified snapshot.<br/>3. Re-run cryptographic audit: `replayLedger()`. |
+| **`FAIL-07`** | `ERR_LEDGER_HASH_MISMATCH: Cryptographic Chain Broken` | Historical trade ledger file corrupted or tampered | `node -e 'require("./backend/execution/dist/polymarket/paper_ledger.js").loadLedgerProjection()'` | 1. Freeze trading bot immediately.<br/>2. Restore ledger from latest verified snapshot.<br/>3. Re-run cryptographic audit: `replayLedger()`. |
 | **`FAIL-08`** | `Split-Brain Cluster: Two Nodes Claiming Leader Lease` | Stale heartbeat lock; network partition between nodes | Inspect `/data/storage/cluster/heartbeat_*.json` | 1. Verify active node ping over WireGuard mesh.<br/>2. Standby node yields if primary heartbeat timestamp is fresh.<br/>3. Clear stale lock: `rm /data/storage/cluster/LEADER.lock`. |
 | **`FAIL-09`** | `Quarantine Record Spike: > 500 Malformed Records/Hour` | Provider API format revision (e.g. string numbers or missing volume) | `wc -l storage/data/quarantine/*.jsonl` | 1. Inspect latest dump: `tail -n 5 storage/data/quarantine/latest.jsonl`.<br/>2. Update field parser mapping.<br/>3. Deploy hotfix with exercising unit test. |
 | **`FAIL-10`** | `V8 Heap Out of Memory (OOM): Container Killed` | Memory leak in long-lived Node.js process | `dmesg \| grep -i oom-killer` | 1. Inspect container cgroups v2 memory ceiling.<br/>2. Configure `NODE_OPTIONS="--max-old-space-size=384"`.<br/>3. Run soak probe to isolate heap growth: `host_soak_leak.bench.js`. |

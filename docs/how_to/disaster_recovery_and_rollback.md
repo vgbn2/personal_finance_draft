@@ -14,7 +14,7 @@ npm run test:core
 npm run test:safety
 ```
 
-The `native:doctor` command reports whether `cmake`, `ctest`, and a focused compiler fallback are available on the current machine. The `npm run native:build` command configures and compiles the C++20 engine in `backend/core/build`. The `npm run test:core` runs all 34 CTests.
+The `native:doctor` command reports whether `cmake`, `ctest`, and a focused compiler fallback are available on the current machine. The `npm run native:build` command configures and compiles the C++20 engine in `backend/cpp_core/build`. The `npm run test:core` runs all 34 CTests.
 
 ## Verification Checklist
 
@@ -60,7 +60,7 @@ Resolution: run `cmake --build build` and check whether your generator places bi
 
 Problem: test target not found.
 
-Resolution: confirm `backend/core/CMakeLists.txt` defines `phase1_compounding_test` and `add_test`.
+Resolution: confirm `backend/cpp_core/CMakeLists.txt` defines `phase1_compounding_test` and `add_test`.
 
 Problem: linker errors for `FinanceEngine`.
 

@@ -2,12 +2,12 @@
 
 > **Status:** Implemented source exists; **not qualified and live execution is blocked** by unresolved bot-state, live-authorization, and order-semantics findings.
 > **Audience:** maintainers reviewing bot-cycle safety and convergence work.
-> **Canonical owner:** `backend/gateway/src/cycle.ts`.
+> **Canonical owner:** `backend/execution/src/cycle.ts`.
 > **Review triggers:** live-mode resolution, authorization, risk approval, order type, bot-state persistence, paper-ledger convergence, quote source, position lifecycle, external API boundary.
 
 ## Purpose And Non-Authority
 
-`backend/gateway/src/cycle.ts` orchestrates a Polymarket bot pass: it can inspect configured state, obtain candidate bets, review tracked positions, select possible entries, and persist cycle state. It is not a release-ready execution engine.
+`backend/execution/src/cycle.ts` orchestrates a Polymarket bot pass: it can inspect configured state, obtain candidate bets, review tracked positions, select possible entries, and persist cycle state. It is not a release-ready execution engine.
 
 This page records the current source contract and known blockers. It does not authorize a bot cycle, provider/account request, paper action, or live order. Do not treat a dry-run result, an action label, or a passing unit test as operational readiness.
 

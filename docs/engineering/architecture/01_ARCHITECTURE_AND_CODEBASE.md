@@ -50,8 +50,8 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph Presentation["Presentation & Control Containers"]
-        CLI["Sovereign CLI & Ink TUI<br/>backend/cli/sovereign_cli.js<br/>Zero-alloc terminal views<br/>[Load: 2/10 | RSS: <30MB]"]
-        DASH["React 19 + Vite Web Dashboard<br/>Frontend/dashboard/src/<br/>Real-time WS state bridge<br/>[Load: 3/10 | Browser DOM]"]
+        CLI["Sovereign CLI & Ink TUI<br/>frontend/cli-tui/sovereign_cli.js<br/>Zero-alloc terminal views<br/>[Load: 2/10 | RSS: <30MB]"]
+        DASH["React 19 + Vite Web Dashboard<br/>frontend/dashboard/src/<br/>Real-time WS state bridge<br/>[Load: 3/10 | Browser DOM]"]
         MCP["Model Context Protocol (MCP)<br/>backend/mcp_server/index.ts<br/>AI Strategy discovery tools<br/>[Load: 2/10 | Heap: <40MB]"]
     end
 
@@ -95,11 +95,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    BOT["Strategy Discovery / Live Bot Cycle<br/>scripts/strategies/auto_strategy_explorer.js<br/>shared/lib/runtime/alpaca_bot_cycle.js"]
+    BOT["Strategy Discovery / Live Bot Cycle<br/>tools/strategies/auto_strategy_explorer.js<br/>shared/lib/runtime/alpaca_bot_cycle.js"]
     ALLOC["1. Virtual Sub-Position Allocator<br/>shared/lib/runtime/sub_positions_ledger.js<br/>- Allocates target quantity to virtual slice<br/>- Emits signature: strat_id_tf_ts_entropy<br/>[Load: 3/10]"]
-    RISK["2. Pre-Trade Risk Manager<br/>backend/core/src/risk/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
+    RISK["2. Pre-Trade Risk Manager<br/>backend/cpp_core/src/risk_management/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
     QUANT["3. Broker Sizing Quantizer<br/>shared/lib/runtime/alpaca_bot_cycle.js<br/>- Clamps quantity to step_size and min_notional<br/>- Enforces integer lots vs fractional limits<br/>[Load: 2/10]"]
-    GATEWAY["4. Execution Gateway<br/>backend/gateway/src/adapters/alpaca_adapter.ts<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
+    GATEWAY["4. Execution Gateway<br/>backend/execution/src/adapters/alpaca_adapter.ts<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
 
     BOT -->|Signal: symbol, side, qty| ALLOC
     ALLOC -->|Pre-Trade Verification Request| RISK
@@ -128,7 +128,7 @@ sovereign-trades/
 ├── config/                  # System environment manifests, risk policies, strategies
 │   ├── strategies/          # Canonical YAML strategy registries (`automated/`, `curated/`, `fixtures/`)
 │   └── system/              # `environment_manifest.json` (strict variable whitelisting)
-├── docs/                    # Master documentation corpus (Schema: `sovereign.documentation_manifest/v1`)
+├── docs/                    # Master documentation corpus (Schema: schema `sovereign.documentation_manifest/.../v1`)
 │   └── engineering/         # Modular 8-section canonical engineering specifications
 ├── Frontend/
 │   └── dashboard/           # React 19 + Vite dashboard (source in `src/`, `dist/` generated)
@@ -149,7 +149,7 @@ sovereign-trades/
 ├── storage/                 # Local data directory (excluded from git tracking)
 │   └── data/
 │       ├── cache/           # Provider HTTP response caches & temporary buffers
-│       ├── runtime/         # Active sub-positions virtual ledger (`ledger/sub_positions.json`)
+│       ├── runtime/         # Active sub-positions virtual ledger (ledger: sub_positions.json)
 │       └── ts/              # High-density binary time-series files (`*.bin`)
 ├── tests/                   # Native Node.js test suites (`run_node_tests.js`)
 └── workspace/               # Project state tracking (`STATE.md`, `PROMPT_LOG.md`, handoffs)
@@ -200,7 +200,7 @@ Only the node designated with `SOVEREIGN_DEPLOYMENT_PROFILE=central-host` has au
 The repository operates locally without external API keys or cloud services:
 - Unit, safety, and integration tests execute against recorded fixtures (`tests/fixtures/`).
 - Market data ingestion uses public endpoints (Binance, Yahoo) or mock generators.
-- Prediction market execution uses the internal virtual paper ledger (`backend/gateway/src/paper_ledger.js`).
+- Prediction market execution uses the internal virtual paper ledger (`backend/execution/src/paper_ledger.js`).
 - Real-money API credentials exist solely on the isolated production host (`hpdesk-1`).
 
 ### 3. Fail-Closed Execution Policy

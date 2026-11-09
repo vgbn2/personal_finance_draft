@@ -26,7 +26,7 @@ last_verified:
 
 ## Identity And Owner
 
-`buildDocsIndex` owns the in-memory and serialized `sovereign.docs_rag/v2` payload. `loadOrBuildIndex` owns compatibility checks before cache reuse.
+`buildDocsIndex` owns the in-memory and serialized schema `sovereign.docs_rag/.../v2` payload. `loadOrBuildIndex` owns compatibility checks before cache reuse.
 
 ## Shape And Field Semantics
 
@@ -48,7 +48,7 @@ The payload is created as one complete object. Search treats it as immutable. A 
 
 ## Producer And Consumer Topology
 
-`buildDocsIndex` produces the payload. `scripts/dev/build_docs_rag_index.js` persists it. `loadOrBuildIndex` reads or rebuilds it. `searchDocs` consumes `terms` and `chunks`.
+`buildDocsIndex` produces the payload. `tools/dev/build_docs_rag_index.js` persists it. `loadOrBuildIndex` reads or rebuilds it. `searchDocs` consumes `terms` and `chunks`.
 
 ## Persistence And Compatibility
 

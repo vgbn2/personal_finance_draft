@@ -11,12 +11,15 @@ var repoRoot = func() string {
 	if env := os.Getenv("SOVEREIGN_REPO_ROOT"); env != "" {
 		return env
 	}
-	if rel, err := filepath.Abs("../../../"); err == nil {
-		if _, err := os.Stat(filepath.Join(rel, "package.json")); err == nil {
-			return rel
+	// From backend/go/pkg/sovt, root is 4 levels up
+	for _, relPath := range []string{"../../../../", "../../../", "../../"} {
+		if abs, err := filepath.Abs(relPath); err == nil {
+			if _, err := os.Stat(filepath.Join(abs, "package.json")); err == nil {
+				return abs
+			}
 		}
 	}
-	return "/home/vgbn/Documents/codeptit/sovereign-trades"
+	return "."
 }()
 
 type RealBarFixture struct {

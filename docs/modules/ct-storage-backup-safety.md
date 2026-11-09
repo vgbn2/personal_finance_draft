@@ -2,7 +2,7 @@
 
 > **Status:** Implemented & Verified (CT-STORAGE-01)  
 > **Audience:** DevOps Engineers, System Administrators, Infrastructure Maintainers  
-> **Canonical owners:** `shared/lib/runtime/host_maintenance.js`, `backend/scripts/ops/host_backup.js`, `scripts/deploy/deploy_proxmox.sh`  
+> **Canonical owners:** `shared/lib/runtime/host_maintenance.js`, `backend/scripts/ops/host_backup.js`, `tools/deploy/deploy_proxmox.sh`  
 > **Review triggers:** Disk thresholds, backup mount paths, container cgroup storage limits, retention policies  
 
 ## Purpose And Non-Goals
@@ -10,7 +10,7 @@
 This module provides fail-closed root filesystem storage monitoring, dedicated backup volume mount enforcement, and atomic provenance-aware archive retention for the Sovereign Platform across Proxmox LXC containers (specifically CT 114 `hp-svconsole`) and Docker deployments. It resolves the `CT-STORAGE-01` production incident where backup staging exhausted the container root filesystem (`/`), causing `storage_unavailable` alarms.
 
 **Goals:**
-- **External Volume Mount Partitioning**: Binds host backups strictly to high-capacity dedicated storage mounts (`/data/backups/` across `infra/docker/docker-compose.yml` and `scripts/deploy/deploy_proxmox.sh`), preventing archive tarballs from writing to the container root partition.
+- **External Volume Mount Partitioning**: Binds host backups strictly to high-capacity dedicated storage mounts (`/data/backups/` across `infra/docker/docker-compose.yml` and `tools/deploy/deploy_proxmox.sh`), preventing archive tarballs from writing to the container root partition.
 - **Fail-Closed Root Disk Exhaustion Guard**: Pre-checks filesystem capacity before creating staging directories or pulling container images. Throws an immediate `ENOSPC` error if free space is `< 1 GiB` or free percentage is `< 5%`.
 - **Atomic Manifest Commitments**: Staged backups write to temporary directories (`<timestamp>.<pid>.tmp`) with streaming SHA-256 payload digests before an atomic `fs.renameSync` commits the verified backup.
 - **Provenance-Aware Retention**: Automatically prunes older backup archives only when their `manifest.json` `source_root` matches the active repository root, preserving external or co-located host backups.
@@ -28,7 +28,7 @@ This module provides fail-closed root filesystem storage monitoring, dedicated b
 | `checkRootDiskSpace(rootPath, options)` | `shared/lib/runtime/host_maintenance.js` | Inspects filesystem via native `statfs`; throws `ENOSPC` error if free bytes `< 1024^3` (1 GiB) or free percentage `< 5%`. |
 | `createHostBackup(options)` | `shared/lib/runtime/host_maintenance.js` | Creates SHA-256 verified atomic backup of TS binary bins, config, and state. |
 | `runHostBackupLoop(options)` | `backend/scripts/ops/host_backup.js` | Scheduled backup daemon; emits degraded `storage_unavailable` heartbeat and exits code 1 upon disk exhaustion. |
-| `scripts/deploy/deploy_proxmox.sh` | Deployment script | Step 1b runs `df -k /` pre-check before container image pull or recreation. |
+| `tools/deploy/deploy_proxmox.sh` | Deployment script | Step 1b runs `df -k /` pre-check before container image pull or recreation. |
 
 ---
 
@@ -71,7 +71,7 @@ shared/lib/runtime/host_maintenance.js
 
 ## Observability
 
-- **Watchdog Heartbeat**: `storage/data/cache/host_backup_status.json` (records `healthyAt`, `lastBackupSha256`, `diskFreeBytes`).
+- **Watchdog Heartbeat**: `storage/data/cache/.../host_backup_status.json` (records `healthyAt`, `lastBackupSha256`, `diskFreeBytes`).
 - **Deployment Evidence**: `/opt/sovereign/deployment_evidence.json` (records pre-deploy backup archive path and verification hash).
 - **Console Telemetry**: `[MAINTENANCE] Root disk space: X MB (Y%) free` logged during every scheduled backup pass.
 
@@ -79,7 +79,7 @@ shared/lib/runtime/host_maintenance.js
 
 ## Tests And Evidence
 
-- **Baseline Reproducer**: `tests/repro/repro_20261014_195038_ct_storage_01_root_disk_check.sh`
+- **Baseline Reproducer**: `tests/repro/.../repro_20261014_195038_ct_storage_01_root_disk_check.sh`
 - **Host Maintenance Contract Suite**: `tests/scripts/operational/host_maintenance.test.js` (17/17 tests passing).
 - **Host Backup CLI Suite**: `tests/scripts/operational/host_backup_cli.test.js` (10/10 tests passing).
 - **Deployment Manifest Contract**: `tests/scripts/architecture/cli/core/deployment_manifest_contract.test.js` (1/1 test passing).

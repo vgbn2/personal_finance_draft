@@ -283,6 +283,7 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
     fr.base.equity_curve.points.push_back({"start", 1.0});
 
     std::vector<double> trade_returns;
+    std::vector<Trade> all_trades;
 
     for (const auto& sym : symbol_order) {
         const auto& sym_rows = groups[sym];
@@ -319,15 +320,7 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
                 net_ret   = adj_exit / adj_entry - 1.0;
             }
 
-            const double pos_size   = std::clamp(frame_cfg.position_size_pct, 0.01, 1.0);
-            const double trade_pnl  = pos_size * net_ret;
-            equity *= (1.0 + trade_pnl);
-            trade_returns.push_back(trade_pnl);
-
-            if (net_ret > 0.0) ++fr.base.summary.winners;
-            else if (net_ret < 0.0) ++fr.base.summary.losers;
-
-            fr.base.trades.push_back(Trade{
+            all_trades.push_back(Trade{
                 sym,
                 entry.timeframe,
                 entry.as_of,
@@ -339,9 +332,26 @@ FrameBacktestResult FrameBacktester::runFromAnnotated(
                 entry.predicted_confidence,
                 static_cast<std::size_t>(horizon),
             });
-            fr.base.equity_curve.points.push_back({exit.as_of, equity});
             i += (horizon - 1);
         }
+    }
+
+    std::sort(all_trades.begin(), all_trades.end(), [](const Trade& a, const Trade& b) {
+        if (a.exit_time != b.exit_time) return a.exit_time < b.exit_time;
+        return a.entry_time < b.entry_time;
+    });
+
+    const double pos_size = std::clamp(frame_cfg.position_size_pct, 0.01, 1.0);
+    for (const auto& tr : all_trades) {
+        const double trade_pnl = pos_size * tr.net_return;
+        equity = std::max(0.0, equity * (1.0 + trade_pnl));
+        trade_returns.push_back(trade_pnl);
+
+        if (tr.net_return > 0.0) ++fr.base.summary.winners;
+        else if (tr.net_return < 0.0) ++fr.base.summary.losers;
+
+        fr.base.trades.push_back(tr);
+        fr.base.equity_curve.points.push_back({tr.exit_time, equity});
     }
 
     fr.base.summary.trades       = fr.base.trades.size();
@@ -574,6 +584,7 @@ std::vector<MassBtJobResult> FrameBacktester::runMassBt(
         equity_points.push_back(EquityPoint{"start", 1.0});
         std::size_t total_trades = 0;
         std::size_t winners = 0;
+        std::vector<Trade> all_trades;
 
         for (const auto& sym : job.symbols) {
             const std::string key = sym + "@" + job.timeframe;
@@ -581,15 +592,22 @@ std::vector<MassBtJobResult> FrameBacktester::runMassBt(
             if (it == snapshot_map.end() || !it->second || it->second->bars.empty()) continue;
             const auto& snap = *(it->second);
             const auto b_res = Backtester::run(snap.bars, bt_cfg);
-            const double pos_size = std::clamp(bt_cfg.position_size_pct, 0.01, 1.0);
-            for (const auto& t : b_res.trades) {
-                const double trade_pnl = pos_size * t.net_return;
-                equity *= (1.0 + trade_pnl);
-                returns.push_back(trade_pnl);
-                equity_points.push_back(EquityPoint{t.exit_time, equity});
-                if (t.net_return > 0.0) ++winners;
-                ++total_trades;
-            }
+            all_trades.insert(all_trades.end(), b_res.trades.begin(), b_res.trades.end());
+        }
+
+        std::sort(all_trades.begin(), all_trades.end(), [](const Trade& a, const Trade& b) {
+            if (a.exit_time != b.exit_time) return a.exit_time < b.exit_time;
+            return a.entry_time < b.entry_time;
+        });
+
+        const double pos_size = std::clamp(bt_cfg.position_size_pct, 0.01, 1.0);
+        for (const auto& t : all_trades) {
+            const double trade_pnl = pos_size * t.net_return;
+            equity = std::max(0.0, equity * (1.0 + trade_pnl));
+            returns.push_back(trade_pnl);
+            equity_points.push_back(EquityPoint{t.exit_time, equity});
+            if (t.net_return > 0.0) ++winners;
+            ++total_trades;
         }
 
         res.trades = total_trades;

@@ -11,7 +11,7 @@ Sovereign is engineered as a local-first, institutional-grade quantitative compu
 ### Zero-Key Development Invariant
 1. **Fully Offline Local Development**: No external exchange API keys, brokerage secrets, or third-party paid subscriptions are required.
 2. **Deterministic Data Fixtures**: All market feeds, historical regressions, and backtest tests run against static, version-controlled fixtures in `tests/fixtures/` and the master offline cache `storage/data/cache/last_fetch.json`.
-3. **Cryptographic Virtual Ledger**: Prediction markets and paper trading execute against an in-memory or append-only journal (`backend/gateway/src/polymarket/paper_ledger.ts`) validated with SHA-256 state checksums.
+3. **Cryptographic Virtual Ledger**: Prediction markets and paper trading execute against an in-memory or append-only journal (`backend/execution/src/polymarket/paper_ledger.ts`) validated with SHA-256 state checksums.
 4. **Isolated Live Credentials**: Live trading credentials and production order routing reside exclusively on the isolated production server (`hpdesk-1`). Local developer machines and pull request automated CI pipelines have zero live execution authority.
 5. **No Python Virtual Environments**: The entire stack is built strictly with **Node.js (v20+)** and **C++20 (CMake 3.15+)**. Do not install or introduce Python `venv` environments.
 
@@ -54,7 +54,7 @@ npm run setup:dev
 This single command:
 1. Instantiates `.env` from `.env.example`.
 2. Recursively installs dependencies across all workspaces (`.`, `backend/api`, `backend/gateway`, `backend/mcp_server`, `Frontend/dashboard`).
-3. Compiles the native C++20 core engine (`backend/core/build/`).
+3. Compiles the native C++20 core engine (`backend/cpp_core/build/`).
 4. Seeds the master offline market fixture (`storage/data/cache/last_fetch.json`).
 5. Executes preliminary verification gates (`test:data`, `test:structure`, `test:core`).
 
@@ -102,10 +102,10 @@ flowchart LR
     subgraph AppLayer [App & Interface Layer]
         CLI[Sovereign CLI & Ink TUI: backend/cli/]
         API[Express REST/WS: backend/api/]
-        UI[React 19 Dashboard: Frontend/dashboard/]
+        UI[React 19 Dashboard: frontend/dashboard/]
     end
 
-    subgraph Gateways [Execution Gateways: backend/gateway/]
+    subgraph Gateways [Execution Gateways: backend/execution/]
         AdapterMT5[MT5 TCP Bridge]
         AdapterAlpaca[Alpaca Adapter]
         AdapterPaper[Polymarket Paper Ledger]
@@ -117,12 +117,12 @@ flowchart LR
     AppLayer --> Gateways
 ```
 
-### 3.1 Native C++20 Core (`backend/core/`)
+### 3.1 Native C++20 Core (`backend/cpp_core/`)
 
-The native engine is located in `backend/core/`. It compiles into the static library `sovereign_core` and provides low-latency math, rolling statistics, technical indicators, and deterministic risk limits.
+The native engine is located in `backend/cpp_core/`. It compiles into the static library `sovereign_core` and provides low-latency math, rolling statistics, technical indicators, and deterministic risk limits.
 
 #### Extending C++ Analytics: Adding an Indicator
-1. **Create Header**: Add `backend/core/src/indicators/keltner_channel.hpp`:
+1. **Create Header**: Add `backend/cpp_core/src/technical_indicators/.../keltner_channel.hpp`:
    ```cpp
    #pragma once
    #include <vector>
@@ -162,7 +162,7 @@ The native engine is located in `backend/core/`. It compiles into the static lib
    } // namespace sovereign::indicators
    ```
 
-2. **Connect to Indicator Engine**: In `backend/core/src/indicators/indicator_engine.cpp`, include the header and attach the output to the `IndicatorRow`:
+2. **Connect to Indicator Engine**: In `backend/cpp_core/src/technical_indicators/indicator_engine.cpp`, include the header and attach the output to the `IndicatorRow`:
    ```cpp
    #include "keltner_channel.hpp"
    // Inside frame builder:
@@ -170,7 +170,7 @@ The native engine is located in `backend/core/`. It compiles into the static lib
    row.set("kc:lower", bands.lower[i]);
    ```
 
-3. **Register Unit Test in CMake**: In `backend/core/CMakeLists.txt`:
+3. **Register Unit Test in CMake**: In `backend/cpp_core/CMakeLists.txt`:
    ```cmake
    add_sovereign_test(keltner_channel_test test/keltner_channel_test.cpp)
    ```
@@ -182,12 +182,12 @@ The native engine is located in `backend/core/`. It compiles into the static lib
 
 ---
 
-### 3.2 Broker Gateways (`backend/gateway/`)
+### 3.2 Broker Gateways (`backend/execution/`)
 
-Broker adapters implement the common `BrokerAdapter` interface defined in `backend/gateway/src/adapters/types.ts`.
+Broker adapters implement the common `BrokerAdapter` interface defined in `backend/execution/src/adapters/types.ts`.
 
 #### Implementing a New Broker Adapter
-1. Create `backend/gateway/src/adapters/<broker>_adapter.ts`:
+1. Create `backend/execution/src/adapters/<broker>_adapter.ts`:
    ```typescript
    import { BrokerAdapter, TradeOrder, Position } from './types';
 
@@ -210,29 +210,29 @@ Broker adapters implement the common `BrokerAdapter` interface defined in `backe
      }
    }
    ```
-2. Re-export in `backend/gateway/src/adapters/index.ts`.
-3. Register capabilities in `config/system/broker_capabilities.json`.
+2. Re-export in `backend/execution/src/adapters/index.ts`.
+3. Register capabilities in `configs/system/broker_capabilities.json`.
 
 ---
 
 ### 3.3 Strategy & Technical Indicators (`shared/lib/`)
 
-- **Technical Indicators**: Located in `shared/lib/market/indicators.js`. Add new math functions to `IndicatorMethods` and describe default inputs in `config/system/indicator_manifest.yaml`.
+- **Technical Indicators**: Located in `shared/lib/market/indicators.js`. Add new math functions to `IndicatorMethods` and describe default inputs in `configs/system/indicator_manifest.yaml`.
 - **Strategy Manifests**: Declarative strategies live in `config/strategies/curated/` and `config/strategies/automated/`. Each strategy defines hypothesis, features, indicators, and risk boundaries.
 - **Social Alpha Research**: Research algorithms in `shared/lib/analysis/social_alpha.js` implement exponential decay, Bayesian credibility weighting, and contrarian rules strictly isolated from live order routing.
 
 ---
 
-### 3.4 CLI & Ink Terminal Dashboard (`backend/cli/`)
+### 3.4 CLI & Ink Terminal Dashboard (`frontend/cli-tui/`)
 
 The platform provides a unified CLI and a reactive 3-pane terminal UI built with **Ink 5** (React for CLI).
 
 - **Adding a CLI Command**:
-  1. Add handler in `backend/cli/commands/<category>/<command_name>.js`.
-  2. Map the command in `backend/cli/sovereign_cli.js`.
-  3. Declare flags and descriptions in `backend/cli/tui/manifest.js`.
+  1. Add handler in `frontend/cli-tui/commands/<category>/<command_name>.js`.
+  2. Map the command in `frontend/cli-tui/sovereign_cli.js`.
+  3. Declare flags and descriptions in `frontend/cli-tui/tui/manifest.js`.
 - **Terminal Hygiene Invariant**:
-  When exiting interactive terminal prompts, always invoke `exitTerminal(130)` (`backend/cli/tui/engine/engine.js`) to restore standard cursor visibility and disable terminal raw mode:
+  When exiting interactive terminal prompts, always invoke `exitTerminal(130)` (`frontend/cli-tui/tui/engine/engine.js`) to restore standard cursor visibility and disable terminal raw mode:
   ```javascript
   function exitTerminal(code = 130) {
     if (process.stdin.setRawMode) {
@@ -245,17 +245,17 @@ The platform provides a unified CLI and a reactive 3-pane terminal UI built with
 
 ---
 
-### 3.5 Web Dashboard (`Frontend/dashboard/`)
+### 3.5 Web Dashboard (`frontend/dashboard/`)
 
 The web UI is built with **React 19**, **TypeScript**, **Vite**, and **Tailwind CSS**.
 
 - **Adding a Panel**:
-  1. Create `Frontend/dashboard/src/components/panels/MyPanel.tsx`.
-  2. Add identifier to `TabId` in `Frontend/dashboard/src/types.ts`.
-  3. Add lazy loader in `Frontend/dashboard/src/App.tsx`.
-  4. Add tab trigger in `Frontend/dashboard/src/components/layout/TopBar.tsx`.
+  1. Create `frontend/dashboard/src/components/panels/.../MyPanel.tsx`.
+  2. Add identifier to `TabId` in `frontend/dashboard/src/types.ts`.
+  3. Add lazy loader in `frontend/dashboard/src/App.tsx`.
+  4. Add tab trigger in `frontend/dashboard/src/components/layout/TopBar.tsx`.
 - **Headless Viewport Testing**:
-  UI tests in `Frontend/dashboard/tests/` verify responsive rendering across mobile (`375px`), tablet (`768px`), and desktop (`1440px`) using the zero-key mock session header (`sovereign_test_mock_session`).
+  UI tests in `frontend/dashboard/tests/` verify responsive rendering across mobile (`375px`), tablet (`768px`), and desktop (`1440px`) using the zero-key mock session header (`sovereign_test_mock_session`).
 
 ---
 
@@ -267,13 +267,13 @@ All pull requests must pass the platform verification matrix prior to review:
 |---|---|---|
 | `npm run test:data` | `tests/run_node_tests.js` | Ingestion pipelines, indicator math, backfill integrity |
 | `npm run test:structure` | `tests/run_node_tests.js` | Repo structural contracts, skills mirror sync, documentation manifest |
-| `npm run test:core` | Native CTest Runner | 34 CTest suites in `backend/core/build/` |
+| `npm run test:core` | Native CTest Runner | 34 CTest suites in `backend/cpp_core/build/` |
 | `npm run test:api` | `tests/run_node_tests.js` | REST endpoints, WebSocket auth, route safety guards |
 | `npm run test:safety` | `tests/run_node_tests.js` | Trade PIN validation, kill switch fail-closed assertions |
 | `npm test` | `tests/run_node_tests.js` | Full Node.js integration suite |
-| `npm run hygiene` | `scripts/dev/check_hygiene.js` | Git noise, broken symlinks, TODO markers, merge conflicts |
-| `npm run audit:documentation` | `scripts/dev/audit_documentation.js` | Relative link validity, Atlas frontmatter schemas, manifest sync |
-| `node scripts/dev/filter_docs.js --strict` | `scripts/dev/filter_docs.js` | Zero-tolerance docs audit (unregistered docs, broken links, stale paths) |
+| `npm run hygiene` | `tools/dev/check_hygiene.js` | Git noise, broken symlinks, TODO markers, merge conflicts |
+| `npm run audit:documentation` | `tools/dev/audit_documentation.js` | Relative link validity, Atlas frontmatter schemas, manifest sync |
+| `node tools/dev/filter_docs.js --strict` | `tools/dev/filter_docs.js` | Zero-tolerance docs audit (unregistered docs, broken links, stale paths) |
 
 ### Zero False-Positive Gate Protocol
 - **No Speculative Defects**: Never report offline fixture defaults, intentional test mocks, or expected telemetry warnings as system bugs.
@@ -309,7 +309,7 @@ Any new markdown document created under `docs/` must be registered in `docs/docu
 Validate documentation with:
 ```bash
 npm run audit:documentation
-node scripts/dev/filter_docs.js --strict
+node tools/dev/filter_docs.js --strict
 ```
 
 ---

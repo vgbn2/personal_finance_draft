@@ -44,7 +44,8 @@ RUN cd backend/execution && npm ci --ignore-scripts --omit=dev
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
-RUN cmake -S backend/cpp_core -B backend/cpp_core/build \
+RUN npm run build --prefix backend/execution \
+    && cmake -S backend/cpp_core -B backend/cpp_core/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
     && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth

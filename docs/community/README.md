@@ -28,9 +28,9 @@ Sovereign is developed with strict adherence to security, technical honesty, and
 
 | Subsystem | Primary Tech | Key Extension Points |
 |---|---|---|
-| **Native Core Engine** | C++20 / CMake | `backend/core/src/indicators/`, `backend/core/src/risk/`, `backend/core/src/ml/` |
-| **Broker Gateways** | TypeScript / Node.js | `backend/gateway/src/adapters/`, `backend/gateway/src/polymarket/` |
+| **Native Core Engine** | C++20 / CMake | `backend/cpp_core/src/technical_indicators/`, `backend/cpp_core/src/risk_management/`, `backend/cpp_core/src/machine_learning/` |
+| **Broker Gateways** | TypeScript / Node.js | `backend/execution/src/adapters/`, `backend/execution/src/polymarket/` |
 | **Strategy & Indicators** | JavaScript (ESM/CJS) | `shared/lib/market/indicators.js`, `config/strategies/curated/` |
-| **Terminal UI & CLI** | React 19 / Ink 5 / Node.js | `backend/cli/commands/`, `backend/cli/tui/manifest.js`, `backend/cli/sovereign_dashboard.mjs` |
-| **Web Dashboard** | React 19 / Vite / Tailwind | `Frontend/dashboard/src/components/panels/`, `Frontend/dashboard/src/lib/` |
+| **Terminal UI & CLI** | React 19 / Ink 5 / Node.js | `frontend/cli-tui/commands/`, `frontend/cli-tui/tui/manifest.js`, `frontend/cli-tui/sovereign_dashboard.mjs` |
+| **Web Dashboard** | React 19 / Vite / Tailwind | `frontend/dashboard/src/components/panels/`, `frontend/dashboard/src/lib/` |
 | **Documentation** | Diátaxis / MkDocs | `docs/tutorials/`, `docs/how_to/`, `docs/reference/`, `docs/explanation/` |

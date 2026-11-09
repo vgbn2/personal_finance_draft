@@ -70,7 +70,7 @@ Incoming Market Buy: $Q_{\text{target}} = 500\text{ units}$ against book with to
 - **Initial Top-of-Book Price**: `$100.00`
 - **Realized Slippage**: $+\$0.09$ (+9 basis points / 0.09% execution drag)
 
-In the Sovereign Native Core (`backend/core/src/risk/cost_model.cpp`), slippage is modeled in basis points ($1 \text{ bps} = 0.01\% = 0.0001$):
+In the Sovereign Native Core (`backend/cpp_core/src/risk_management/cost_model.cpp`), slippage is modeled in basis points ($1 \text{ bps} = 0.01\% = 0.0001$):
 
 $$P_{\text{entry}} = P_{\text{close}} \cdot \left(1 + \frac{\text{cost\_bps}}{10000}\right)$$
 

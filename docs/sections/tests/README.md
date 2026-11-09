@@ -27,15 +27,15 @@ tests/
    - Repository Structure: `tests/scripts/architecture/cli/core/structure_contract.test.js`
    - Settings & Runtime Contract: `tests/scripts/architecture/settings/settings_runtime_contract.test.js`
 
-3. **C++ Native CTest Suite (`backend/core/test/`):**
+3. **C++ Native CTest Suite (`backend/cpp_core/test/`):**
    - Executed via `ctest --test-dir backend/core/build`.
    - 34 compiled native C++ executables verifying Float64 readers, grid optimizers, and matrix correlation engines.
 
 4. **Static Analysis & Anti-Cheating Scanners:**
-   - Test Integrity Anti-Cheating Audit: `scripts/dev/audit_test_integrity.js`
-   - Repository Hygiene Audit: `scripts/dev/check_hygiene.js`
+   - Test Integrity Anti-Cheating Audit: `tools/dev/audit_test_integrity.js`
+   - Repository Hygiene Audit: `tools/dev/check_hygiene.js`
 
 ## Code Atlas Cross-References
 
 - Testing Surface Runbook — [`docs/operational/guides/testing_surface.md`](../../operational/guides/testing_surface.md)
-- Testing Methodology Overview — [`docs/codebase_tour/07_testing_methodology.md`](../../codebase_tour/07_testing_methodology.md)
+- Testing Methodology Overview — [`docs/tutorials/07_testing_methodology.md`](../../tutorials/07_testing_methodology.md)

@@ -11,7 +11,7 @@ Sovereign decouples quantitative strategy research and order orchestration from 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                      Sovereign Execution Engine                         │
-│  backend/cli/commands/trade/trade.js  │  backend/gateway/src/index.ts   │
+│  frontend/cli-tui/commands/trade/trade.js  │  backend/execution/src/index.ts   │
 └────────────────────────────────────┬────────────────────────────────────┘
                                      │
                         [Pre-Trade Risk & Policy Gate]
@@ -22,7 +22,7 @@ Sovereign decouples quantitative strategy research and order orchestration from 
                                      │
 ┌────────────────────────────────────▼────────────────────────────────────┐
 │                    Mt5Adapter (TCP Socket Server)                       │
-│  backend/gateway/src/adapters/mt5_adapter.ts                            │
+│  backend/execution/src/adapters/mt5_adapter.ts                            │
 │  Listening on 127.0.0.1:8282 (MT5_BRIDGE_PORT)                          │
 └────────────────────────────────────▲────────────────────────────────────┘
                                      │
@@ -135,10 +135,10 @@ Live execution (`--live`) enforces dual-check authentication:
 - The Trade PIN is stripped from child process environment arguments to prevent exposure in process tables (`/proc`).
 
 ### Global Kill Switch
-The execution gateway checks the native risk engine status (`kill-switch status`) against `storage/data/kill_switch.json`. If the kill switch is engaged, all outbound orders are immediately rejected before touching the socket.
+The execution gateway checks the native risk engine status (`kill-switch status`) against `storage/data/.../kill_switch.json`. If the kill switch is engaged, all outbound orders are immediately rejected before touching the socket.
 
 ### C++ Native Risk Checks
-Orders are checked against the compiled C++ analytics engine (`backend/core/`):
+Orders are checked against the compiled C++ analytics engine (`backend/cpp_core/`):
 - Notional value: `referencePrice * quantity`.
 - Equity & Margin: Current equity queried from `getPortfolioBalance()`.
 - Drawdown bounds: `CURRENT_PORTFOLIO_DRAWDOWN` must not exceed `MAX_ALLOWED_DRAWDOWN` (default: `0.30`).
@@ -417,7 +417,7 @@ chmod 000 /opt/mt5/terminal/liveupdate
 
 ### Profile Management
 
-Manage encrypted account credentials stored in `storage/secrets/mt5/profiles.json` (AES-256-GCM):
+Manage encrypted account credentials stored in `storage/secrets/mt5/.../profiles.json` (AES-256-GCM):
 
 ```bash
 # List configured accounts
@@ -487,7 +487,7 @@ MQL5 socket error `5273` is a generic network I/O fault that maps to three disti
    - *Resolution*: Added a 2000ms heartbeat `{"type":"PING"}` in `OnTimer()`. When the port is closed, `SocketSend` fails immediately on the next heartbeat, invokes `CloseSocket()`, and returns the EA to the active `ConnectBridge()` retry loop.
 
 ### 7.3 Gateway On-Demand Connection Timeout Tuning
-- **Root Cause**: The default `connectTimeoutMs` in `backend/gateway/src/adapters/mt5_adapter.ts` was 4000ms. In virtualized or containerized Wine environments with 1000ms timer granularity, the connection handshake occasionally required 4-5s on initial spawn.
+- **Root Cause**: The default `connectTimeoutMs` in `backend/execution/src/adapters/mt5_adapter.ts` was 4000ms. In virtualized or containerized Wine environments with 1000ms timer granularity, the connection handshake occasionally required 4-5s on initial spawn.
 - **Resolution**: Increased default `connectTimeoutMs` to 10000ms (configurable via `MT5_CONNECT_TIMEOUT_MS`).
 
 ### 7.4 Compiler Warning 43 (`uint` to `int` Truncation)
@@ -504,5 +504,5 @@ MQL5 socket error `5273` is a generic network I/O fault that maps to three disti
 | `[SOVEREIGN] SocketSend error, err=5273` | Normal during CLI idle periods. | Gateway binds port 8282 on-demand during CLI runs. When CLI exits, EA logs throttled retry messages every 5s until next command executes. |
 | `WebRequest error 4014` | Verify you are using `SovereignTradeBridge.mq5`. | Older HTTP-based bridges required URL whitelisting. Upgrade to the Reverse-TCP bridge which uses native sockets. |
 | `Invalid Trade PIN. Live execution blocked` | Verify `SOVEREIGN_TRADE_PIN` in `.env`. | Fail-Closed security prevented unauthenticated trade execution. Check PIN configuration or provide PIN at the interactive prompt. |
-| `GLOBAL KILL SWITCH ENGAGED` | Inspect `storage/data/kill_switch.json`. | Risk engine has tripped the global kill switch. Reset via `sovereign kill-switch reset` only after reviewing system state. |
+| `GLOBAL KILL SWITCH ENGAGED` | Inspect `storage/data/.../kill_switch.json`. | Risk engine has tripped the global kill switch. Reset via `sovereign kill-switch reset` only after reviewing system state. |
 | `Market execution SL/TP rejected (retcode 10016)` | Check broker execution mode in MT5 symbol specs. | ECN brokers require 2-step execution. Verify that `SovereignTradeBridge.mq5` is up to date with post-fill `TRADE_ACTION_SLTP` modification. |

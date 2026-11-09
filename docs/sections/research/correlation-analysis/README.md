@@ -2,7 +2,7 @@
 
 > **Status:** Implemented for local source/test scope; no provider, host, deployment, paper, or live qualification is implied.
 > **Audience:** quantitative researchers and maintainers of the backend correlation command.
-> **Canonical owners:** `backend/cli/commands/tools/backend_correlation.js` and the native `correlation` backend command.
+> **Canonical owners:** `frontend/cli-tui/commands/tools/backend_correlation.js` and the native `correlation` backend command.
 > **Review triggers:** symbol resolution, storage readers, formula synthesis, alignment policy, native argument contract, correlation method, temporary snapshot lifecycle.
 
 ## Purpose And Boundary

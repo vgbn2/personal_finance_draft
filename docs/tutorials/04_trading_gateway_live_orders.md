@@ -1,6 +1,6 @@
 # Module 04 — The Trading Gateway & Live Order Placement
 
-**Read this before touching anything in `backend/gateway/`, `backend/cli/commands/trade/`, or
+**Read this before touching anything in `backend/execution/`, `frontend/cli-tui/commands/trade/`, or
 `shared/lib/runtime/alpaca_bot_cycle.js`.** This is the real-money path. `docs/guide/chapter_16` covers
 the *generic* "why a gateway boundary exists" pattern with placeholder filenames; this module is the
 actual current code, verified line-by-line on 2026-06-25.
@@ -9,14 +9,14 @@ actual current code, verified line-by-line on 2026-06-25.
 
 | Broker | Adapter | Order call | Minimal shape |
 |---|---|---|---|
-| Alpaca (equities/crypto) | `AlpacaAdapter`, `backend/gateway/src/index.ts:456` | `this.alpaca.createOrder(payload)` (:511) | `{symbol, qty, side, type, time_in_force, limit_price?}` — `time_in_force` is `'gtc'` for crypto, `'day'` for fractional equities (an Alpaca 422-rejection workaround) |
+| Alpaca (equities/crypto) | `AlpacaAdapter`, `backend/execution/src/index.ts:456` | `this.alpaca.createOrder(payload)` (:511) | `{symbol, qty, side, type, time_in_force, limit_price?}` — `time_in_force` is `'gtc'` for crypto, `'day'` for fractional equities (an Alpaca 422-rejection workaround) |
 | Polymarket (prediction markets) | `PolymarketAdapter`, `:900` | `client.createOrder(...)` then `client.postOrder(signedOrder, OrderType.GTC)` | `{tokenID, price, size, side}` — price is bounds-checked against tick size before submission |
-| MT5 (forex/CFDs) | No direct adapter — `backend/cli/commands/trade/trade_mt5.js` launches the real MT5 terminal via a saved profile; symbol/qty/side flow through the MT5 EA bridge, not this gateway | — | `{login, server, has_password, terminal_path}` |
+| MT5 (forex/CFDs) | No direct adapter — `frontend/cli-tui/commands/trade/trade_mt5.js` launches the real MT5 terminal via a saved profile; symbol/qty/side flow through the MT5 EA bridge, not this gateway | — | `{login, server, has_password, terminal_path}` |
 
 From the CLI, all three are reachable through one function: `commandTrade(args)` in
-`backend/cli/commands/trade/trade.js:264` (Alpaca path) or `trade_polymarket.js`'s `commandPolymarket`
+`frontend/cli-tui/commands/trade/trade.js:264` (Alpaca path) or `trade_polymarket.js`'s `commandPolymarket`
 (Polymarket path). `alpaca`/`trade` are aliases for the same handler
-(`backend/cli/sovereign_cli.js:71-72`).
+(`frontend/cli-tui/sovereign_cli.js:71-72`).
 
 ## The PIN gate (fail-closed by design)
 
@@ -33,14 +33,14 @@ From the CLI, all three are reachable through one function: `commandTrade(args)`
   (`shared/lib/runtime/backend_bridge.js`) — the first fix only covered this one caller; the second
   covers all 8 current callers of that function.
 
-`isRichTerminal()` is `process.stdout.isTTY && !process.env.CI` (`backend/cli/tui/engine/engine.js:45-48`)
+`isRichTerminal()` is `process.stdout.isTTY && !process.env.CI` (`frontend/cli-tui/tui/engine/engine.js:45-48`)
 — an in-pane dashboard child has a piped, non-TTY stdout, so it always lands on the fail-closed branch
 rather than hanging on a prompt nobody can answer. This is why the automated bot (below) always passes
 `--pin` explicitly via the env var instead of relying on an interactive prompt.
 
 ## The risk engine
 
-`RiskEngineBridge` (`backend/gateway/src/index.ts:610`), `checkRisk(order)` at `:611`, called at `:719`.
+`RiskEngineBridge` (`backend/execution/src/index.ts:610`), `checkRisk(order)` at `:611`, called at `:719`.
 If the C++ risk binary isn't found: **dry-run mode warns and approves anyway**; **live mode rejects**
 with a `CRITICAL` reason. If the binary *is* found, it also checks the kill-switch status
 (module 01) before evaluating notional/volatility/drawdown — an engaged kill-switch rejects regardless
@@ -73,14 +73,14 @@ logic, so this file is it:
   still-tracked position instead of dropping it.
 - `runAlpacaExitCheck(args)` — the review loop: acquires a PID-staleness lock, checks every
   tracked position against the broker snapshot, fires real sells in `--live`, and is always run *before*
-  the entry loop through `strategy/automation_guard.js` (module 03) — review-then-buy, same ordering
+  the entry loop through `frontend/cli-tui/commands/strategies/automation_guard.js` (module 03) — review-then-buy, same ordering
   Polymarket's bot uses. Broker failure blocks before local state or strategy signals are read.
 
 ## Labs
 
 **Lab 1 — read the fail-closed path for real.** With `SOVEREIGN_TRADE_PIN` unset in your shell, run:
 ```bash
-node backend/cli/sovereign_cli.js trade buy AAPL 1 market --live --json
+node frontend/cli-tui/sovereign_cli.js trade buy AAPL 1 market --live --json
 ```
 Confirm you get exit code 1 and the exact fail-closed message from `trade.js:353`, with **no prompt**
 (this is non-interactive from this shell's perspective once piped through `--json`). Then check `$?`
@@ -91,7 +91,7 @@ Confirm you get exit code 1 and the exact fail-closed message from `trade.js:353
 anything, work out by hand what `['--action','buy','--symbol','aapl','--qty','5','--order-type','limit',
 '--price','180']` becomes after this function runs. Then verify:
 ```bash
-node -e "console.log(require('./backend/cli/commands/trade/trade.js').buildTradeArgsFromActionFlag(['--action','buy','--symbol','aapl','--qty','5','--order-type','limit','--price','180']))"
+node -e "console.log(require('./frontend/cli-tui/commands/trade/trade.js').buildTradeArgsFromActionFlag(['--action','buy','--symbol','aapl','--qty','5','--order-type','limit','--price','180']))"
 ```
 
 **Lab 3 — find the oversell guard's limit yourself.** In `alpaca_bot_cycle.js`, construct (on paper, no
@@ -101,7 +101,7 @@ the test cases in `tests/scripts/lib/alpaca_bot_cycle.test.js` (search for "clam
 
 **Lab 4 — confirm the kill-switch boundary.** Run:
 ```bash
-node backend/cli/sovereign_cli.js bot health --json
+node frontend/cli-tui/sovereign_cli.js bot health --json
 ```
 then find, by reading `RiskEngineBridge.checkRisk` in `index.ts`, exactly which JSON field in the C++
 binary's `kill-switch status` output it reads to decide rejection. Don't guess the field name — find it.

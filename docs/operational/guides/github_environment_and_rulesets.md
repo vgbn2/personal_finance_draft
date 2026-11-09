@@ -73,7 +73,7 @@ GitHub Environments provide deployment protection rules and scoped credentials:
    - **Allowed Secrets**:
      - `ALPACA_PAPER_API_KEY`: Free sandbox key from alpaca.markets.
      - `ALPACA_PAPER_API_SECRET`: Free sandbox secret.
-   - **Safety Boundary**: Polymarket uses internal virtual cash ledger (`backend/gateway/src/paper_ledger.js`) requiring no Polygon wallet credentials.
+   - **Safety Boundary**: Polymarket uses internal virtual cash ledger (`backend/execution/src/paper_ledger.js`) requiring no Polygon wallet credentials.
 
 3. **`production` (Live Execution Boundary)**:
    - **Protection Rules**: Required reviewer approval + deployment branches restricted to `main` with protected tag releases.
@@ -105,11 +105,11 @@ Domain ownership is defined in `.github/CODEOWNERS` and aligned with `workspace/
 /backend/core/        @PRIMARY_OWNER_HANDLE @CPP_MAINTAINER_HANDLE
 /backend/cli/         @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
 /backend/api/         @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
-/Frontend/dashboard/  @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
+/frontend/dashboard/  @PRIMARY_OWNER_HANDLE @APPLICATION_MAINTAINER_HANDLE
 /docs/                @PRIMARY_OWNER_HANDLE @DOCUMENTATION_MAINTAINER_HANDLE
 
 # Core-maintainer-only boundaries (Risk, Execution, Auth, Infrastructure)
-/backend/gateway/     @PRIMARY_OWNER_HANDLE
+/backend/execution/     @PRIMARY_OWNER_HANDLE
 /shared/lib/auth/     @PRIMARY_OWNER_HANDLE
 /shared/lib/runtime/  @PRIMARY_OWNER_HANDLE
 /config/              @PRIMARY_OWNER_HANDLE
@@ -135,9 +135,9 @@ Contributors, code reviewers, and AI coding agents (Claude, Codex, Gemini) follo
 | Lifecycle Phase | Developer / Reviewer Action | Canonical Skill Protocol | Enforced Safety & Verification Gate |
 |---|---|---|---|
 | **Authoring & Refactor** | Implementing approved features/fixes | `skills/mass-implement/SKILL.md` | Bounded blast radius, zero-key development preservation. |
-| **Test Integrity Scan** | Pre-PR anti-cheating verification | `skills/verify-test-integrity/SKILL.md` | Scans for Release-elided assertions (`assert()`) and swallowed mocks. |
-| **Native Core Verification** | Native engine & CTest checks | `skills/native-core-verify/SKILL.md` | 34/34 CTests pass with sanitizer validation (`npm run test:core`). |
-| **Hygiene & Docs Audit** | Clean tree & Atlas consistency | `skills/repo-hygiene/SKILL.md`<br>`skills/audit-documentation/SKILL.md` | `npm run hygiene` (0 noise) + `npm run audit:documentation` (100% manifest match). |
+| **Test Integrity Scan** | Pre-PR anti-cheating verification | `skills/blast-through/SKILL.md` | Scans for Release-elided assertions (`assert()`) and swallowed mocks. |
+| **Native Core Verification** | Native engine & CTest checks | `skills/blast-through/SKILL.md` | 34/34 CTests pass with sanitizer validation (`npm run test:core`). |
+| **Hygiene & Docs Audit** | Clean tree & Atlas consistency | `skills/blast-through/SKILL.md`<br>`skills/blast-through/SKILL.md` | `npm run hygiene` (0 noise) + `npm run audit:documentation` (100% manifest match). |
 | **PR Review & Audit** | Code owner / security audit | `skills/blast-through/SKILL.md` | Single-mode audit (`review`, `security`, `connective-tissue`) with 6-tuple fault attribution. |
 | **CI Failure Triage** | Debugging build/test failures | `skills/bayesian-troubleshooter/SKILL.md` | Hypothesis ranking & evidence-based binary search before editing code. |
 | **Architecture & Atlas Sync**| Boundary & schema shifts | `skills/codebase-untangler/SKILL.md` | Updates Code Atlas records (`docs/atlas/`) and manifest contracts. |

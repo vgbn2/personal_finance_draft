@@ -2,7 +2,7 @@
 
 > **Status:** Implemented & Hardened (PM-SETTLE-01 Resolved)  
 > **Audience:** Financial Engineers, Backend Developers, Risk Officers  
-> **Canonical owners:** `backend/gateway/src/polymarket/paper_ledger.ts`, `backend/gateway/src/polymarket/paper.ts`  
+> **Canonical owners:** `backend/execution/src/polymarket/paper_ledger.ts`, `backend/execution/src/polymarket/paper.ts`  
 > **Review triggers:** Accounting rules, settlement windows, ledger schema versions, locking protocols  
 
 ## Purpose And Non-Goals
@@ -27,10 +27,10 @@ This module provides a cryptographically chained, double-entry virtual paper led
 
 | Surface | Owner | Contract |
 |---|---|---|
-| `replayLedger(events, fallbackBalance, options)` | `backend/gateway/src/polymarket/paper_ledger.ts` | Replays events to produce a `LedgerProjection` with `virtual_balance`, `settled_cash`, `pending_receivables`, positions, and realized PnL. |
-| `appendLedgerEvents(storageDir, newEvents)` | `backend/gateway/src/polymarket/paper_ledger.ts` | Atomically validates hash linkage, sequence continuity, and appends events to `events.jsonl`. |
-| `acquireLedgerLock(storageDir, now)` | `backend/gateway/src/polymarket/paper_ledger.ts` | Acquires process lockfile with PID and timestamp; reclaims stale locks (>10m) if owning PID is dead. |
-| `releaseLedgerLock(storageDir, token)` | `backend/gateway/src/polymarket/paper_ledger.ts` | Releases held lockfile matching the issued UUID token. |
+| `replayLedger(events, fallbackBalance, options)` | `backend/execution/src/polymarket/paper_ledger.ts` | Replays events to produce a `LedgerProjection` with `virtual_balance`, `settled_cash`, `pending_receivables`, positions, and realized PnL. |
+| `appendLedgerEvents(storageDir, newEvents)` | `backend/execution/src/polymarket/paper_ledger.ts` | Atomically validates hash linkage, sequence continuity, and appends events to `events.jsonl`. |
+| `acquireLedgerLock(storageDir, now)` | `backend/execution/src/polymarket/paper_ledger.ts` | Acquires process lockfile with PID and timestamp; reclaims stale locks (>10m) if owning PID is dead. |
+| `releaseLedgerLock(storageDir, token)` | `backend/execution/src/polymarket/paper_ledger.ts` | Releases held lockfile matching the issued UUID token. |
 
 ### Event Types & Accounting Invariants
 
@@ -71,7 +71,7 @@ Trading Bot Intent ──► Paper Execution (paper.ts)
 3. **Cryptographic Tamper-Proofing**: `event_checksum === SHA256(stableObject(unsignedEvent))`. Any modified byte invalidates all subsequent events upon replay.
 4. **Available Cash Invariant**:
    $$\text{AvailableCash}(t) = \max(0, \text{settled\_cash}(t) - \sum \text{pending\_receivables}_{t_i > t})$$
-   **Enforcement (`PM-SETTLE-01` Resolved)**: `replayLedger(..., options)` default projections evaluate at `options.asOf ?? options.now ?? Date.now()`, ensuring omitted `asOf` anchors to the current instant rather than terminal infinity. Furthermore, `backend/gateway/src/polymarket/paper.ts` sizes paper buy orders strictly against `available_cash` rather than nominal `virtual_balance`, synchronizing `available_cash` and `settled_cash` deductions.
+   **Enforcement (`PM-SETTLE-01` Resolved)**: `replayLedger(..., options)` default projections evaluate at `options.asOf ?? options.now ?? Date.now()`, ensuring omitted `asOf` anchors to the current instant rather than terminal infinity. Furthermore, `backend/execution/src/polymarket/paper.ts` sizes paper buy orders strictly against `available_cash` rather than nominal `virtual_balance`, synchronizing `available_cash` and `settled_cash` deductions.
 
 ---
 
@@ -88,7 +88,7 @@ Trading Bot Intent ──► Paper Execution (paper.ts)
 
 ## Observability
 
-- **Ledger Status**: `node -r ./shared/lib/runtime/ts_register -e 'console.log(require("./backend/gateway/src/polymarket/paper_ledger").loadLedgerProjection("storage/data/paper_trading/polymarket"))'`.
+- **Ledger Status**: `node -r ./shared/lib/runtime/ts_register -e 'console.log(require("./backend/execution/src/polymarket/paper_ledger").loadLedgerProjection("storage/data/paper_trading/polymarket"))'`.
 - **Integrity Check**: Replay logs checksum status and active position counts.
 
 ---

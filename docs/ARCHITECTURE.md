@@ -9,8 +9,8 @@ Sovereign is a modular, local-first quantitative trading, research, backtesting,
 ```mermaid
 flowchart TD
     subgraph Tier1["1. Presentation & Integration Tier"]
-        CLI["Sovereign CLI & Ink TUI<br/>backend/cli/sovereign_cli.js<br/>Interactive Cockpit"]
-        DASH["React 19 + Vite Dashboard<br/>Frontend/dashboard/src/<br/>Real-Time WebSocket Bridge"]
+        CLI["Sovereign CLI & Ink TUI<br/>frontend/cli-tui/sovereign_cli.js<br/>Interactive Cockpit"]
+        DASH["React 19 + Vite Dashboard<br/>frontend/dashboard/src/<br/>Real-Time WebSocket Bridge"]
         MCP["Model Context Protocol (MCP)<br/>backend/mcp_server/<br/>Autonomous AI Workbench"]
     end
 
@@ -20,7 +20,7 @@ flowchart TD
     end
 
     subgraph Tier3["3. Quantitative Discovery & State Management"]
-        DISCOVERY["Autonomous Strategy Discovery<br/>scripts/strategies/auto_strategy_explorer.js<br/>6D Novelty Hamming Filter"]
+        DISCOVERY["Autonomous Strategy Discovery<br/>tools/strategies/auto_strategy_explorer.js<br/>6D Novelty Hamming Filter"]
         SUB["Virtual Sub-Positions Ledger<br/>shared/lib/runtime/sub_positions_ledger.js<br/>Deterministic Order Signatures"]
         INDICATORS["Indicator & Feature Engine<br/>shared/lib/market/indicators.js<br/>Rolling RSI, MACD, ATR, SVM"]
     end
@@ -59,12 +59,12 @@ flowchart TD
 
 | Domain | Canonical Source Owner | Responsibility |
 |---|---|---|
-| **System Architecture & Codebase** | `backend/cli/`, `backend/api/`, `backend/core/` | Core lifecycle, CLI entrypoints, directory contracts |
+| **System Architecture & Codebase** | `frontend/cli-tui/`, `backend/api/`, `backend/cpp_core/` | Core lifecycle, CLI entrypoints, directory contracts |
 | **Data Ingestion & Binary Storage**| `shared/lib/market/` | Binary `SOVT` storage, append-only segments, rollup synthesis |
-| **Native C++20 Core & Backtester** | `backend/core/` | Zero-allocation backtesting, streaming TS merger, Monte Carlo, PreTradeRisk |
+| **Native C++20 Core & Backtester** | `backend/cpp_core/` | Zero-allocation backtesting, streaming TS merger, Monte Carlo, PreTradeRisk |
 | **Quantitative Alpha & MCP Workbench**| `scripts/strategies/`, `backend/mcp_server/` | Autonomous AI strategy discovery, 6D novelty filter, MCP tools |
-| **Execution & Sub-Positions Ledger**| `shared/lib/runtime/`, `backend/gateway/` | Virtual sub-position accounting, deterministic signatures, broker reconciliation |
-| **Prediction Markets & Archiving** | `shared/lib/market/`, `backend/gateway/` | Polymarket Gamma/CLOB ingestion, 1s orderbook snapshots, paper ledger |
+| **Execution & Sub-Positions Ledger**| `shared/lib/runtime/`, `backend/execution/` | Virtual sub-position accounting, deterministic signatures, broker reconciliation |
+| **Prediction Markets & Archiving** | `shared/lib/market/`, `backend/execution/` | Polymarket Gamma/CLOB ingestion, 1s orderbook snapshots, paper ledger |
 | **Security, APIs & Deployment** | `backend/mcp_server/`, `infra/docker/` | RBAC access control, Express REST/WS APIs, test matrix, Proxmox VM soak |
 
 ---

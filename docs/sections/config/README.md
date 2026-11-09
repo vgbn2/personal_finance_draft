@@ -16,18 +16,18 @@ config/
 
 ## Active Subsystem Entrypoints
 
-1. **Market Universes (`config/markets/`, `config/asset_mapping.json`):**
-   - Configured Asset Mapping: `config/asset_mapping.json` (canonical symbol & asset metadata map)
-   - Universe Matrix: `config/markets/asset_mapping.yaml` (legacy/compat asset universe grid)
+1. **Market Universes (`configs/markets/`, `configs/asset_mapping.json`):**
+   - Configured Asset Mapping: `configs/asset_mapping.json` (canonical symbol & asset metadata map)
+   - Universe Matrix: `configs/markets/asset_mapping.yaml` (legacy/compat asset universe grid)
 
 2. **Strategy Manifests (`config/strategies/`):**
    - Registered Strategy Manifests: `config/strategies/*.yaml` (defines RSI reversal, EMA crossover, Bollinger breakout, etc.)
 
-3. **System & Environment Manifest (`config/system/`):**
-   - Environment Manifest: `config/system/environment_manifest.json` (classified environment variable catalog, surface permissions, default values)
+3. **System & Environment Manifest (`configs/system/`):**
+   - Environment Manifest: `configs/system/environment_manifest.json` (classified environment variable catalog, surface permissions, default values)
 
-4. **Trading & Prop Firm Profiles (`config/trading/`):**
-   - Prop Firm Registries: `config/trading/prop_firms.json`
+4. **Trading & Prop Firm Profiles (`configs/trading/`):**
+   - Prop Firm Registries: `configs/trading/prop_firms.json`
 
 ## Code Atlas & Related Maps
 

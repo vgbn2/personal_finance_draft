@@ -23,13 +23,13 @@ Execution gateways where order routing is decoupled from data ingestion:
   - *Execution*: Polygon CLOB API (orders signed via EOA or Gnosis Safe deposit wallet).
   - *Data Feed*: Third-party historical archive **PMXT** (`https://api.pmxt.dev`) for L2 orderbook replay, plus live CLOB WebSocket orderbook snapshots.
 - **Virtual Paper Ledger**:
-  - *Execution*: In-memory & disk-backed simulated paper trading (`backend/gateway/src/paper_ledger.js`).
+  - *Execution*: In-memory & disk-backed simulated paper trading (`backend/execution/src/paper_ledger.js`).
   - *Data Feed*: Consumes any historical binary TS file (`storage/data/ts/*.bin`).
 
 ```text
 ┌───────────────────────────────────────────────────────────┐
 │                    Strategy & Trade Desks                 │
-│  backend/cli/commands/trade/trade.js (--broker <name>)    │
+│  frontend/cli-tui/commands/trade/trade.js (--broker <name>)    │
 └─────────────────────────────┬─────────────────────────────┘
                               │
                [Pre-Trade Risk & Policy Filter]
@@ -39,7 +39,7 @@ Execution gateways where order routing is decoupled from data ingestion:
                               │
 ┌─────────────────────────────▼─────────────────────────────┐
 │                 Unified Broker Gateway                     │
-│  backend/gateway/src/adapters/types.ts (BrokerAdapter)    │
+│  backend/execution/src/adapters/types.ts (BrokerAdapter)    │
 │                                                           │
 │  [Dual Adapters]                 [Execution-Only]         │
 │  - AlpacaAdapter (Bars + Trades)  - Mt5Adapter            │
@@ -54,7 +54,7 @@ Execution gateways where order routing is decoupled from data ingestion:
 
 ## 2. The `BrokerAdapter` Interface Contract
 
-All broker adapters must implement the canonical TypeScript contract in `backend/gateway/src/adapters/types.ts`:
+All broker adapters must implement the canonical TypeScript contract in `backend/execution/src/adapters/types.ts`:
 
 ```typescript
 export interface OrderRequest {
@@ -102,7 +102,7 @@ export interface BrokerAdapter {
 ## 3. Step-by-Step Implementation
 
 ### Step 1: Create Adapter Implementation
-Create `backend/gateway/src/adapters/mybroker_adapter.ts`:
+Create `backend/execution/src/adapters/.../mybroker_adapter.ts`:
 
 ```typescript
 import { BrokerAdapter, OrderRequest, OrderResult, Position } from './types';
@@ -143,7 +143,7 @@ export class MyBrokerAdapter implements BrokerAdapter {
 ```
 
 ### Step 2: Register Adapter in Gateway Factory
-Register the adapter in `backend/gateway/src/index.ts` so the CLI `--broker` flag routes correctly:
+Register the adapter in `backend/execution/src/index.ts` so the CLI `--broker` flag routes correctly:
 
 ```typescript
 import { MyBrokerAdapter } from './adapters/mybroker_adapter';
@@ -162,8 +162,8 @@ export function getBrokerAdapter(name: string): BrokerAdapter {
 ### Step 3: Implement Profile Vault & Security
 If the broker uses account credentials:
 1. Store credentials encrypted under `storage/secrets/<broker>/` using AES-256-GCM.
-2. Add diagnostic doctor check in `backend/cli/commands/doctor/`.
-3. Add CLI subcommand dispatcher under `backend/cli/commands/trade/`.
+2. Add diagnostic doctor check in `frontend/cli-tui/commands/doctor/`.
+3. Add CLI subcommand dispatcher under `frontend/cli-tui/commands/trade/`.
 
 ### Step 4: Write Integration Tests with Mock Bridge
 Create offline mock server/fixtures under `tests/fixtures/` and integration tests under `tests/scripts/integration/<broker>/`. Verify:

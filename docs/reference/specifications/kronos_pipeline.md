@@ -65,7 +65,7 @@ flowchart LR
   - *Error Handling*: Reject input sequences with length $< 32$ bars with `InsufficientBarHistoryError`.
 
 - **FR-KRN-002 (Vocabulary & Bin Serialization)**:
-  - *Description*: Token boundaries MUST be loaded from declarative configuration `models/kronos_tokenizer.json` to ensure exact parity with offline training.
+  - *Description*: Token boundaries MUST be loaded from declarative configuration `models/.../kronos_tokenizer.json` to ensure exact parity with offline training.
 
 ### 3.2 Tensor Construction & Memory Management
 - **FR-KRN-003 (Zero-Copy Tensor Builder)**:
@@ -73,7 +73,7 @@ flowchart LR
 
 ### 3.3 Model Inference & Signal Generation
 - **FR-KRN-004 (ONNX Runtime Bridge)**:
-  - *Description*: The pipeline MUST load `models/kronos_base.onnx` and execute inference on CPU using multi-threaded thread pools.
+  - *Description*: The pipeline MUST load `models/.../kronos_base.onnx` and execute inference on CPU using multi-threaded thread pools.
   - *Output*: Future trajectory return distributions ($\mu, \sigma$) and 10th/50th/90th percentile quantile targets.
 
 - **FR-KRN-005 (Directional Conviction Scoring)**:
@@ -84,11 +84,11 @@ flowchart LR
 ## 4. External Interface Requirements
 
 ### 4.1 Software Interfaces
-- **C++ Tokenizer API**: `backend/core/src/ml/kronos_tokenizer.hpp`.
-- **C++ Tensor Builder API**: `backend/core/src/ml/kronos_tensor_builder.hpp`.
+- **C++ Tokenizer API**: `backend/cpp_core/src/machine_learning/kronos_tokenizer.hpp`.
+- **C++ Tensor Builder API**: `backend/cpp_core/src/machine_learning/kronos_tensor_builder.hpp`.
 - **Model Storage Assets**:
-  - `models/kronos_base.onnx` (Pre-trained neural weights).
-  - `models/kronos_tokenizer.json` (Token vocabulary definitions).
+  - `models/.../kronos_base.onnx` (Pre-trained neural weights).
+  - `models/.../kronos_tokenizer.json` (Token vocabulary definitions).
 
 ---
 
@@ -110,9 +110,9 @@ flowchart LR
 ### 6.2 Verification Matrix
 | Requirement ID | Description | Verification Method | Target Command / Test |
 |---|---|---|---|
-| `FR-KRN-001` | Hierarchical Tokenization | CTest Unit Test | `backend/core/tests/test_kronos_tokenizer.cpp` |
+| `FR-KRN-001` | Hierarchical Tokenization | CTest Unit Test | `backend/cpp_core/test/ml/kronos_integration_test.cpp` |
 | `FR-KRN-002` | Vocabulary Parity | Configuration Test | `npm run test:core` |
-| `FR-KRN-003` | Tensor Builder Contract | CTest Unit Test | `backend/core/tests/test_kronos_tensor_builder.cpp` |
+| `FR-KRN-003` | Tensor Builder Contract | CTest Unit Test | `backend/cpp_core/test/ml/tensor_builder_test.cpp` |
 | `FR-KRN-004` | ONNX Inference | Model Integration Test | `npm run test:core` |
-| `NFR-KRN-001` | Tokenization Throughput | Benchmark Test | `backend/core/tests/test_kronos_tokenizer.cpp` |
-| `NFR-KRN-002` | Sub-5ms Inference | Benchmark Test | `backend/core/tests/test_kronos_tensor_builder.cpp` |
+| `NFR-KRN-001` | Tokenization Throughput | Benchmark Test | `backend/cpp_core/test/ml/kronos_integration_test.cpp` |
+| `NFR-KRN-002` | Sub-5ms Inference | Benchmark Test | `backend/cpp_core/test/ml/tensor_builder_test.cpp` |

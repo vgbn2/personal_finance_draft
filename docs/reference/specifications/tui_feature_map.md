@@ -1,6 +1,6 @@
 # TUI Feature Map
 
-Source of truth: `backend/cli/tui/manifest.js` + `backend/cli/sovereign_cli.js`
+Source of truth: `frontend/cli-tui/tui/manifest.js` + `frontend/cli-tui/sovereign_cli.js`
 Updated: 2026-06-11
 
 Current audit baseline: this map is aligned to the 2026-06-11 feature pass. Use

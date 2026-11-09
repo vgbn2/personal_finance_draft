@@ -391,7 +391,7 @@ The canonical format is owned by `TS_HEADER_BYTES` and `TS_RECORD_BYTES` in `sha
 
 #### Layer 3: Broker gateways & paper ledger
 
-**`backend/gateway/src/polymarket/paper_ledger.ts`**
+**`backend/execution/src/polymarket/paper_ledger.ts`**
 
 | Function | Purpose |
 |---|---|
@@ -402,7 +402,7 @@ The canonical format is owned by `TS_HEADER_BYTES` and `TS_RECORD_BYTES` in `sha
 | `initializeLedger(storageDir, startingBalance, options)` | Creates the deterministic genesis event. |
 | `loadLedgerProjection(storageDir, startingBalance, options)` | Loads verified events and returns their time-grounded projection. |
 
-**`backend/gateway/src/adapters/`**
+**`backend/execution/src/adapters/`**
 
 | Adapter | Function | Purpose |
 |---|---|---|
@@ -421,15 +421,15 @@ The canonical format is owned by `TS_HEADER_BYTES` and `TS_RECORD_BYTES` in `sha
 
 | File | Function | Purpose |
 |---|---|---|
-| `backend/core/src/backtest/frame_backtester.{cpp,hpp}` | `sovereign::FrameBacktester::run(bars, config)` | Frame backtest over contiguous records. |
+| `backend/cpp_core/src/backtest/frame_backtester.{cpp,hpp}` | `sovereign::FrameBacktester::run(bars, config)` | Frame backtest over contiguous records. |
 | | `computeMetrics()` | Sharpe, Sortino, max drawdown, win rate and profit factor. |
 | | `exportJson(outputStream)` | Serializes the report. |
-| `backend/core/src/data/binary_ts_merger.{cpp,hpp}` | `sovereign::BinaryTsMerger::merge(baseFile, deltaFile, outputFile)` | O(N+M) two-pointer merge over 48-byte records with deterministic duplicate resolution. |
+| `backend/cpp_core/src/data/binary_ts_merger.{cpp,hpp}` | `sovereign::BinaryTsMerger::merge(baseFile, deltaFile, outputFile)` | O(N+M) two-pointer merge over 48-byte records with deterministic duplicate resolution. |
 | | `validateSorted(filePath)` | Confirms monotonic timestamps across a file. |
 
 #### Layer 5: Operational daemons, deployment & API
 
-**`backend/scripts/ops/host_backup.js`** (wrapper: `scripts/ops/host_backup.js`)
+**`backend/scripts/ops/host_backup.js`** (wrapper: `backend/scripts/ops/host_backup.js`)
 
 | Function | Purpose |
 |---|---|
@@ -439,7 +439,7 @@ The canonical format is owned by `TS_HEADER_BYTES` and `TS_RECORD_BYTES` in `sha
 | `runHostBackupLoop(options)` | Watch loop; startup disk safety check; heartbeat updates. |
 | `exitCodeForResult(result)` | `0` success, `1` fatal, `3` retention-only warning. |
 
-**`scripts/deploy/deploy_proxmox.sh`**
+**`tools/deploy/deploy_proxmox.sh`**
 
 | Mechanism | Purpose |
 |---|---|
@@ -611,7 +611,7 @@ flowchart TD
     classDef critical stroke:crimson,stroke-width:2px;
     classDef neutral stroke:gray,stroke-width:1px;
 
-    AGG["Gateway Aggregator<br/>backend/gateway/aggregate_portfolio.ts"]:::control
+    AGG["Gateway Aggregator<br/>backend/execution/aggregate_portfolio.ts"]:::control
 
     subgraph Adapters["Multi-Broker Gateway Adapters"]
         A1["Alpaca Adapter<br/>REST v2 / WebSocket<br/>Stocks & Crypto"]:::data
@@ -654,7 +654,7 @@ One-sided and empty books fall back in order to a finite last trade, the availab
 | Aspect | Detail |
 |---|---|
 | **Problem** | `ALPACA_PAPER_MAX_NOTIONAL=5` was applied to both buys and sells. A broker-backed AAPL exit worth $100.91 was rejected every ~5 minutes, trapping the position open. Ten strategy-attributed sub-positions produced 10 identical warnings per cycle (about 230 over 2 hours). |
-| **Invariant** | Notional limits apply only to exposure-increasing buys (`order.side === 'buy'`). Risk-reducing sells are exempt (`backend/gateway/src/index.ts`). |
+| **Invariant** | Notional limits apply only to exposure-increasing buys (`order.side === 'buy'`). Risk-reducing sells are exempt (`backend/execution/src/index.ts`). |
 | **Netting** | `shared/lib/runtime/alpaca_bot_cycle.js` aggregates sub-positions on one symbol into a single market order, emitting one error per asset and preserving strategy attribution in `cycleHistory`. |
 | **Verification** | `tests/scripts/lib/alpaca_bot_cycle.test.js` (20/20 pass) |
 
@@ -673,7 +673,7 @@ flowchart TD
     NET["alpaca_bot_cycle.js<br/>Symbol Netting & Consolidated Order Derivation"]:::control
     SUB --> NET
 
-    FILTER{"backend/gateway/src/index.ts<br/>Asymmetric Notional Filter"}:::control
+    FILTER{"backend/execution/src/index.ts<br/>Asymmetric Notional Filter"}:::control
     NET -->|"Single Market Sell: Qty = Sum(Qty_i)"| FILTER
 
     BUY_CLAMP["side === 'buy'<br/>Enforce ALPACA_PAPER_MAX_NOTIONAL ($5)"]:::warning
@@ -692,8 +692,8 @@ flowchart TD
 | Aspect | Detail |
 |---|---|
 | **Problem** | An omitted `options.asOf` defaulted to `Infinity`, prematurely maturing pending receivables. A $125 buy executed with only $100 settled cash ($50 unearned). |
-| **Temporal grounding** | `replayLedger` (`backend/gateway/src/polymarket/paper_ledger.ts`) anchors `asOf` to `options.asOf ?? options.now ?? Date.now()` and forwards it through `loadLedgerProjection`, `initializeLedger`, `appendLedgerEvents`. |
-| **Sizing** | `backend/gateway/src/polymarket/paper.ts` sizes buys against `available_cash`, not nominal `virtual_balance`. |
+| **Temporal grounding** | `replayLedger` (`backend/execution/src/polymarket/paper_ledger.ts`) anchors `asOf` to `options.asOf ?? options.now ?? Date.now()` and forwards it through `loadLedgerProjection`, `initializeLedger`, `appendLedgerEvents`. |
+| **Sizing** | `backend/execution/src/polymarket/paper.ts` sizes buys against `available_cash`, not nominal `virtual_balance`. |
 | **Verification** | `tests/scripts/integration/gateway/paper_ledger_settlement.test.js` (5/5 pass) |
 
 #### Figure 4.3: Settlement Escrow & Available Cash State Machine
@@ -708,7 +708,7 @@ flowchart TD
 
     SALE["Asset Sale Event ($50.00 Credit)<br/>Settlement Due: T_due = T_sale + 24 hours"]:::data
 
-    REPLAY["replayLedger(events, balance, { asOf: T_now })<br/>backend/gateway/src/polymarket/paper_ledger.ts"]:::control
+    REPLAY["replayLedger(events, balance, { asOf: T_now })<br/>backend/execution/src/polymarket/paper_ledger.ts"]:::control
     SALE --> REPLAY
 
     CHECK{"T_now >= T_due?"}:::control
@@ -1015,7 +1015,7 @@ flowchart TD
 
 ### 6.1 Vectorized SIMD Frame Backtester
 
-`backend/core/src/backtest/frame_backtester.cpp` runs native and annotated frame backtests over contiguous C++ data structures, with Monte Carlo, walk-forward and mass-backtest paths. The current source does not contain AVX2 intrinsics or a checked benchmark artifact proving a bars-per-second guarantee.
+`backend/cpp_core/src/backtest/frame_backtester.cpp` runs native and annotated frame backtests over contiguous C++ data structures, with Monte Carlo, walk-forward and mass-backtest paths. The current source does not contain AVX2 intrinsics or a checked benchmark artifact proving a bars-per-second guarantee.
 
 > **Numeric format:** Canonical `.bin` storage uses six IEEE 754 `float64LE` fields per record after the 8-byte header. Any future float32/SIMD conversion requires its own explicit numeric-error contract and benchmark before promotion into this implemented architecture section.
 
@@ -1150,10 +1150,10 @@ The daemon broadcasts records to local clients on `/tmp/sovereign-feed.sock` wit
 
 | Control | Rule | Canonical Owner |
 |---|---|---|
-| **Order concentration gate** | Order notional must not exceed 25% of portfolio equity by default; CLI may supply a stricter limit | `backend/core/src/risk/{risk_limits.hpp,pre_trade_risk.cpp}` |
-| **Drawdown gate** | Current drawdown at or above 30% is rejected by default; fail-closed mode can halt trading | `backend/core/src/risk/{risk_limits.hpp,pre_trade_risk.cpp}` |
-| **Options Greek limits** | Net $|\Gamma| \le 50.0$, Net $|\mathcal{V}| \le 10,000\text{ USD}$, Net $|\Delta| \le 5.0$ | `backend/core/src/risk/pre_trade_risk.cpp` |
-| **Kill-switch** | File-based lock (`storage/data/cache/kill_switch.lock`) plus `POST /api/kill-switch` | `backend/api/server/routes/system/` |
+| **Order concentration gate** | Order notional must not exceed 25% of portfolio equity by default; CLI may supply a stricter limit | `backend/cpp_core/src/risk_management/{risk_limits.hpp,pre_trade_risk.cpp}` |
+| **Drawdown gate** | Current drawdown at or above 30% is rejected by default; fail-closed mode can halt trading | `backend/cpp_core/src/risk_management/{risk_limits.hpp,pre_trade_risk.cpp}` |
+| **Options Greek limits** | Net $|\Gamma| \le 50.0$, Net $|\mathcal{V}| \le 10,000\text{ USD}$, Net $|\Delta| \le 5.0$ | `backend/cpp_core/src/risk_management/pre_trade_risk.cpp` |
+| **Kill-switch** | File-based lock (`storage/data/cache/.../kill_switch.lock`) plus `POST /api/kill-switch` | `backend/api/server/routes/system/` |
 
 ---
 
@@ -1178,11 +1178,11 @@ Production runs on bare-metal host `hpdesk-1` under Proxmox VE with isolated LXC
 | Aspect | Detail |
 |---|---|
 | **Problem** | In CT 114 (`hp-svconsole`), root (`/`) hit 100% due to ~12.2 GiB of backup archives, while `/data` had 608 GiB free. The backup daemon degraded with `storage_unavailable`. |
-| **Mount redirection** | Backup staging and retention redirected to `/data/backups/` in `infra/docker/docker-compose.yml` (`${HOST_BACKUP_EXTERNAL_DIR:-/data/backups}:/data/backups`) and `scripts/deploy/deploy_proxmox.sh`. |
+| **Mount redirection** | Backup staging and retention redirected to `/data/backups/` in `infra/docker/docker-compose.yml` (`${HOST_BACKUP_EXTERNAL_DIR:-/data/backups}:/data/backups`) and `tools/deploy/deploy_proxmox.sh`. |
 | **Fail-closed rule** | `FreeBytes < 1 GiB (1024^3)` **or** `FreePercent < 5.0%` ⇒ abort with `ENOSPC`. |
 | **Enforcement** | `checkRootDiskSpace` in `shared/lib/runtime/host_maintenance.js` runs a native `statfs` check before any archive. On failure `backend/scripts/ops/host_backup.js` emits a degraded heartbeat (`storage_unavailable`), logs, and exits 1 without allocating staging memory. |
 | **Deploy pre-check** | Step 1b of `deploy_proxmox.sh` runs `df -k /` and aborts if free root space is < 1 GB or < 5% before Docker layers are pulled. |
-| **Evidence** | Reproducer: `tests/repro/repro_20261014_195038_ct_storage_01_root_disk_check.sh`. Contracts: `tests/scripts/operational/host_maintenance.test.js` (17/17), `tests/scripts/operational/host_backup_cli.test.js` (10/10). |
+| **Evidence** | Reproducer: `tests/repro/.../repro_20261014_195038_ct_storage_01_root_disk_check.sh`. Contracts: `tests/scripts/operational/host_maintenance.test.js` (17/17), `tests/scripts/operational/host_backup_cli.test.js` (10/10). |
 
 #### Figure 7.1: CT 114 Storage & Backup Mount Isolation
 
@@ -1272,7 +1272,7 @@ The Sovereign storage engine stores two fundamentally distinct data classes:
 | **Write Amplification Factor ($\text{WAF}$)** | 2.14x | **0.50x** | **76.6% reduction in physical flash writes**, extending SSD lifespan. |
 | **ZFS ARC Cache Hit Ratio** | 94.2% | **98.7%** | Contiguous blocks reduce ARC metadata fragmentation. |
 
-The following commands are an operator-owned ZFS tuning example, not an action currently performed by `scripts/deploy/deploy_proxmox.sh`:
+The following commands are an operator-owned ZFS tuning example, not an action currently performed by `tools/deploy/deploy_proxmox.sh`:
 
 ```bash
 zfs set recordsize=1M zpool-nvme/subvol-114-disk-1/data/ts
@@ -1360,7 +1360,7 @@ Investigation revealed that the backfill daemon routinely invoked `data_rollup.j
 
 #### 7.6.2 The Solution: Idempotent Span Probing & Rollup Guards
 
-The issue was permanently resolved by introducing the `readCoverage` bucket span probe in `backend/cli/commands/data/backfill_daemon.js:364-378`:
+The issue was permanently resolved by introducing the `readCoverage` bucket span probe in `frontend/cli-tui/commands/data/backfill_daemon.js:364-378`:
 1. **Pre-Rollup Coverage Probe**: Before unlinking any derived weekly or monthly `.bin` file, the daemon queries `readCoverage(symbol, timeframe)`.
 2. **Freshness Comparison**: If the derived file's latest record timestamp equals the base 1-minute bar timestamp, the action is marked `'skip'`.
 3. **Zero-Write Guarantee**: On idle or already-synchronized datasets, the rollup loop performs **0 disk writes**, reducing daily NVMe write volume from $494\text{ GB}$ to under $1.2\text{ GB}$ (a **99.76% reduction in disk wear**).
@@ -1484,7 +1484,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Complementary outcomes sum to 1.00 USD. When liquidity withdraws during news events, wide spreads (> 0.10 USD) make midpoint pricing misleading. |
 | **Source** | Polymarket CLOB documentation, EIP-712 |
-| **Applied in** | `shared/lib/strategy/polymarket_clob_model.js`, `backend/gateway/src/adapters/polymarket_adapter.ts` |
+| **Applied in** | `shared/lib/strategy/polymarket_clob_model.js`, `backend/execution/src/adapters/polymarket_adapter.ts` |
 | **Benefit** | Avoids quoting into illiquid gaps; sound reference prices during flash events; enables dislocation arbitrage. |
 
 #### 9.1.3 200-bar fastpath pruning
@@ -1493,7 +1493,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Re-evaluating 10,000+ bars per tick causes non-linear CPU cost and event-loop lag. RSI-14, EMA-20/50 and ATR-14 converge within a 200-bar window. |
 | **Source** | Quantitative portfolio theory, V8 tuning guides |
-| **Applied in** | `shared/lib/runtime/alpaca_bot_cycle.js`, `scripts/strategies/rsi_ml_confluence.js` |
+| **Applied in** | `shared/lib/runtime/alpaca_bot_cycle.js`, `tools/strategies/rsi_ml_confluence.js` |
 | **Benefit** | Per-tick latency drops from 45ms to under 1.5ms (96.7% reduction), eliminating GC spikes in volatile sessions. |
 
 #### 9.1.4 Atomic staging & anti-cheat test integrity
@@ -1511,7 +1511,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Symmetrical notional caps block risk-reducing exits when a position's value exceeds the entry threshold. Additionally, routing multiple sub-positions on the same symbol as separate exit orders creates warning storms and rate-limit rejections at the broker. |
 | **Source** | Production trading logs on `hpdesk-1`, Alpaca Markets v2 Trading API specifications. |
-| **Applied in** | `shared/lib/runtime/alpaca_bot_cycle.js` (10:1 sell order aggregation) and `backend/gateway/src/index.ts` (asymmetric `side === 'buy'` cap enforcement). |
+| **Applied in** | `shared/lib/runtime/alpaca_bot_cycle.js` (10:1 sell order aggregation) and `backend/execution/src/index.ts` (asymmetric `side === 'buy'` cap enforcement). |
 | **Benefit** | Prevents risk-reducing exits from being blocked, reduces broker order rate by 90%, eliminates redundant error warnings, and maintains granular sub-position PnL attribution in `cycleHistory`. |
 
 #### 9.1.6 Temporal projection grounding & available cash sizing (`PM-SETTLE-01`)
@@ -1520,7 +1520,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Replaying event ledgers without caller-grounded timestamps causes pending receivables to prematurely mature when evaluation defaults to `Infinity`, allowing bots to spend unearned capital before trade settlement. |
 | **Source** | Polymarket CLOB smart contract settlement rules, double-entry accounting invariants. |
-| **Applied in** | `backend/gateway/src/polymarket/paper_ledger.ts` (`replayLedger` temporal anchoring) and `backend/gateway/src/polymarket/paper.ts` (sizing against `available_cash`). |
+| **Applied in** | `backend/execution/src/polymarket/paper_ledger.ts` (`replayLedger` temporal anchoring) and `backend/execution/src/polymarket/paper.ts` (sizing against `available_cash`). |
 | **Benefit** | Guarantees that paper buy orders size strictly against settled cash minus active escrowed receivables, preventing premature capital expenditure and mirroring real-world T+1 settlement. |
 
 #### 9.1.7 Fail-closed root storage protection & backup mount isolation (`CT-STORAGE-01`)
@@ -1529,7 +1529,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | In containerized Linux environments (Proxmox LXC), co-locating backup archives on the root filesystem partition (`/`) leads to rapid 100% disk exhaustion, triggering unhandled Node.js V8 heap crashes. |
 | **Source** | Production CT 114 disk exhaustion incident, Linux cgroup memory and storage limits. |
-| **Applied in** | `shared/lib/runtime/host_maintenance.js` (`checkRootDiskSpace`), `backend/scripts/ops/host_backup.js`, `infra/docker/docker-compose.yml`, and `scripts/deploy/deploy_proxmox.sh`. |
+| **Applied in** | `shared/lib/runtime/host_maintenance.js` (`checkRootDiskSpace`), `backend/scripts/ops/host_backup.js`, `infra/docker/docker-compose.yml`, and `tools/deploy/deploy_proxmox.sh`. |
 | **Benefit** | Enforces fail-closed protection (< 1 GiB or < 5% free space halts operations with `ENOSPC` before disk writes occur) and redirects all high-volume backups to dedicated `/data/backups/` storage mounts. |
 
 #### 9.1.8 Anti-cheat untracked test recognition via intent-to-add (`AC-TEST-01`)
@@ -1538,7 +1538,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Automated test integrity scanners auditing `git diff` fail to inspect newly authored, untracked integration tests unless they are explicitly indexed in the git staging area. |
 | **Source** | Git index internals (`git add -N`), Sovereign anti-cheat enforcement protocol. |
-| **Applied in** | `tests/scripts/operational/anti_cheat_enforcer.js` and contributor PR preflight checklists. |
+| **Applied in** | `tools/dev-productivity/bin/anti-cheat-enforcer` and contributor PR preflight checklists. |
 | **Benefit** | Enables `anti-cheat-enforcer --diff --require-tests` to cleanly validate new integration suites without requiring premature commits, maintaining zero-tolerance policy against deleted test assertions. |
 
 #### 9.1.9 NVMe write wear elimination via bucket span probing
@@ -1547,7 +1547,7 @@ The platform's adversarial chaos suite tests 27 distinct fault conditions across
 |---|---|
 | **Learned** | Unconditional periodic rollups rewrite identical multi-year time-series binaries on every cycle, burning hundreds of gigabytes of NVMe SSD flash endurance on completely static market data. |
 | **Source** | Proxmox CT 114 NVMe wear incident (494 GB written in 26 hours across 102 assets). |
-| **Applied in** | `backend/cli/commands/data/backfill_daemon.js:364-378` and `backend/cli/commands/data/data_rollup.js:183`. |
+| **Applied in** | `frontend/cli-tui/commands/data/backfill_daemon.js:364-378` and `frontend/cli-tui/commands/data/data_rollup.js:183`. |
 | **Benefit** | Inspects `readCoverage` before unlinking or rewriting; skips warm cycles completely, reducing daily NVMe write volume by 99.76% (from 494 GB/day to < 1.2 GB/day) while preserving bit-for-bit data parity. |
 
 #### 9.1.10 Bitemporal publication-instant disambiguation for US Treasury yields
@@ -1627,7 +1627,7 @@ npm run test:api
 
 **10.1.3.1 Adding a broker gateway**
 
-1. Implement `BrokerAdapter` from `backend/gateway/src/adapters/types.ts`:
+1. Implement `BrokerAdapter` from `backend/execution/src/adapters/types.ts`:
    ```typescript
    export interface BrokerAdapter {
      getQuote(symbol: string, options?: any): Promise<number>;
@@ -1649,7 +1649,7 @@ npm run test:api
    - `parameters`: numerical hyperparameters with bounds and defaults
    - `risk`: concentration limits, max drawdown stops, sizing mode
    - `sections.promotion` and `sections.notes`: documentation blocks for registry sync
-3. Sync the registry: `node backend/cli/sovereign_cli.js strategy sync`
+3. Sync the registry: `node frontend/cli-tui/sovereign_cli.js strategy sync`
 
 **10.1.3.3 Registering an MCP tool**
 
@@ -1663,11 +1663,11 @@ Deep contracts live in `docs/modules/`.
 
 | Specification | Canonical owners | Capability |
 |---|---|---|
-| [`alpaca-deduplicated-exit.md`](../modules/alpaca-deduplicated-exit.md) | `shared/lib/runtime/alpaca_bot_cycle.js`, `backend/gateway/src/index.ts` | Asymmetric notional caps, 10:1 sub-position sell deduplication, attribution preservation |
+| [`alpaca-deduplicated-exit.md`](../modules/alpaca-deduplicated-exit.md) | `shared/lib/runtime/alpaca_bot_cycle.js`, `backend/execution/src/index.ts` | Asymmetric notional caps, 10:1 sub-position sell deduplication, attribution preservation |
 | [`ct-storage-backup-safety.md`](../modules/ct-storage-backup-safety.md) | `shared/lib/runtime/host_maintenance.js`, `backend/scripts/ops/host_backup.js` | CT 114 storage safety, fail-closed `<1GB` / `<5%` checks, `/data/backups/` isolation |
 | [`ingestion-quarantine.md`](../modules/ingestion-quarantine.md) | `shared/lib/data/quarantine.js`, `shared/lib/data/ingestion.js` | Anomaly isolation, `QUARANTINE_REASONS` taxonomy, 30-day retention pruning |
 | [`market-invariants-spec.md`](../modules/market-invariants-spec.md) | `shared/lib/strategy/backtest.js`, `shared/lib/data/macro_store.js` | Core market invariants: half-open intervals, UTC primacy, exact decimal scaling, bitemporal PIT availability |
-| [`paper-settlement-ledger.md`](../modules/paper-settlement-ledger.md) | `backend/gateway/src/polymarket/paper_ledger.ts`, `paper.ts` | SHA-256 chained journal, temporal grounding, available-cash sizing |
+| [`paper-settlement-ledger.md`](../modules/paper-settlement-ledger.md) | `backend/execution/src/polymarket/paper_ledger.ts`, `paper.ts` | SHA-256 chained journal, temporal grounding, available-cash sizing |
 | [`polymarket-clob-reference-pricing.md`](../modules/polymarket-clob-reference-pricing.md) | `shared/lib/strategy/polymarket_clob_model.js`, `polymarket_adapter.ts` | Spread fallback (spread > 0.10 USD ⇒ `P_last`), DIR5, EIP-712 orders |
 | [`documentation-retrieval.md`](../modules/documentation-retrieval.md) | `shared/lib/ai/docs_rag_indexer.js`, `docs/documentation_manifest.json` | TF-IDF documentation search, corpus policies, Atlas record validation |
 
@@ -1675,7 +1675,7 @@ Deep contracts live in `docs/modules/`.
 
 ```bash
 # 1. Repo hygiene (no git noise, symlinks, stray code markers)
-node scripts/dev/check_hygiene.js
+node tools/dev/check_hygiene.js
 
 # 2. Documentation consistency and Atlas record integrity
 npm run audit:documentation
@@ -1708,7 +1708,7 @@ flowchart TD
     classDef critical stroke:crimson,stroke-width:2px;
     classDef neutral stroke:gray,stroke-width:1px;
 
-    TRIG["Trigger: scripts/deploy/deploy_proxmox.sh"]:::control
+    TRIG["Trigger: tools/deploy/deploy_proxmox.sh"]:::control
     MUTEX["1. Acquire Mutex Lock<br/>flock -n 9 /var/lock/sovereign-deploy.lock<br/>(Exit 73 on collision)"]:::control
     PREFLIGHT{"2. Step 1b Preflight: df -k /<br/>FreeRoot < 1 GiB OR FreePercent < 5%?"}:::control
 
@@ -1753,7 +1753,7 @@ flowchart TD
 #### 10.2.3 Storage Retention & Compaction
 
 ```bash
-node backend/cli/sovereign_cli.js prune --days 30 --archive ./storage/data/archive
+node frontend/cli-tui/sovereign_cli.js prune --days 30 --archive ./storage/data/archive
 ```
 
 The pipeline enforces three contracts:
@@ -1766,7 +1766,7 @@ The pipeline enforces three contracts:
 
 - **Global kill-switch:**
   ```bash
-  node backend/cli/sovereign_cli.js kill-switch --pin <OPERATOR_PIN>
+  node frontend/cli-tui/sovereign_cli.js kill-switch --pin <OPERATOR_PIN>
   ```
   or `POST /api/kill-switch` with an authenticated session token. Halts all bot loops and mass-cancels via `AlpacaAdapter.cancelAllOrders()` and `PolymarketAdapter.cancelAllOrders()`.
 - **Stale lock reclamation:** after a crash leaves `storage/data/cache/*.lock`, `acquireLedgerLock()` checks the holder with `process.kill(pid, 0)`. If the PID is dead and the lock is older than 10 minutes, it reclaims the lock and records an audit event.
@@ -1934,7 +1934,7 @@ flowchart TD
 1. Verify the integrity of the cryptographic paper ledger by performing a deterministic dry-run replay:
    ```bash
    node -e '
-     const { readLedger, replayLedger } = require("./backend/gateway/dist/polymarket/paper_ledger.js");
+     const { readLedger, replayLedger } = require("./backend/execution/dist/polymarket/paper_ledger.js");
      const loaded = readLedger("storage/data/paper");
      if (!loaded.ok) throw new Error(loaded.error);
      const state = replayLedger(loaded.events, 10000, { asOf: Date.now() });
@@ -1975,7 +1975,7 @@ flowchart TD
    ```
 3. Start the Sovereign CLI background trading runner in dry-run monitoring mode:
    ```bash
-   node backend/cli/commands/runner/run.js --once
+   node frontend/cli-tui/commands/runner/run.js --once
    ```
 4. Confirm successful disaster recovery by polling the system health endpoint:
    ```bash
@@ -1999,13 +1999,13 @@ The Sovereign Trading Platform enforces twelve fundamental mathematical invarian
 | **INV-03** | **Exact Decimal Scaling** | Quantities and monetary amounts scale by $10^D$ in integer arithmetic before IEEE float conversion. | `shared/lib/strategy/backtest.js` | `npm run test:core` | Zero cumulative roundoff drift across 1,000,000 ledger balance updates. |
 | **INV-04** | **Bitemporal Point-In-Time** | $\text{Visible}(t) \iff t_{\text{publication}} \le T_{\text{decision}} \land t_{\text{receipt}} \le T_{\text{decision}}$. | `shared/lib/data/macro_store.js` | `tests/scripts/integration/research_invariants/market_invariants.test.js` | Zero future release leakage during historical macro backtest replay. |
 | **INV-05** | **Asymmetric Return Recovery** | $R_{\text{recovery}} = \frac{D}{1 - D}$ where $D \in [0, 1)$ is the drawdown fraction. | `shared/lib/strategy/backtest.js` | `tests/scripts/integration/research_invariants/market_invariants.test.js` | $D=0.50 \implies R=1.00$ ($100\%$ gain needed to recover $50\%$ loss). |
-| **INV-06** | **Available Cash Conservation** | $\text{AvailableCash}(t) = \max\left(0, \text{virtual\_balance}(t) - \sum_{t_i > t} \text{receivable}_i\right) = \max(0, \text{settled\_cash}(t))$. | `backend/gateway/src/polymarket/paper_ledger.ts` | `tests/scripts/integration/gateway/paper_ledger_settlement.test.js` | Buy order sizing rejected when order notional exceeds available cash. |
+| **INV-06** | **Available Cash Conservation** | $\text{AvailableCash}(t) = \max\left(0, \text{virtual\_balance}(t) - \sum_{t_i > t} \text{receivable}_i\right) = \max(0, \text{settled\_cash}(t))$. | `backend/execution/src/polymarket/paper_ledger.ts` | `tests/scripts/integration/gateway/paper_ledger_settlement.test.js` | Buy order sizing rejected when order notional exceeds available cash. |
 | **INV-07** | **CLOB Spread Fallback** | $P_{\text{ref}} = \begin{cases} \frac{P_{\text{bid}} + P_{\text{ask}}}{2} & \text{if } P_{\text{ask}} - P_{\text{bid}} \le 0.10 \\ P_{\text{last}} & \text{if } P_{\text{ask}} - P_{\text{bid}} > 0.10 \end{cases}$. | `shared/lib/strategy/polymarket_clob_model.js` | `tests/scripts/integration/polymarket/polymarket_clob_spread_fallback.test.js` | Fallback to $P_{\text{last}}$ on spreads $> \$0.10$ USD (bit-for-bit parity). |
 | **INV-08** | **Harmonic Depth Imbalance** | $DIR_5 = \frac{\sum_{i=1}^5 \frac{V_{b,i} - V_{a,i}}{i}}{\sum_{i=1}^5 \frac{V_{b,i} + V_{a,i}}{i}} \in [-1, +1]$. | `shared/lib/strategy/polymarket_clob_model.js` | `node scripts/dev/verify_docs_formula_parity.js` | $DIR_5 = 0.0$ on symmetric depth; $DIR_5 = 0.50$ on $3:1$ bid skew. |
 | **INV-09** | **Whalley-Wilmott Band** | $\Delta H = \left(\frac{3 \lambda S_t \Gamma_{\text{net}}^2}{2 \gamma}\right)^{1/3}$. | `shared/lib/strategy/options_smile_model.js` | `npm run test:api` | Zero trades executed when $|\Delta_{\text{net}}| \le \Delta H$; minimal trade when breached. |
 | **INV-10** | **SVI Arbitrage Absence (research target)** | $\frac{\partial w(k)}{\partial k} \in (-2, 2)$ and $g(k) \ge 0$ for all moneyness $k$. | No production owner yet; `options_smile_model.js` uses nearest-neighbor 25-delta observations. | Not qualified | Promote only after calibrated-surface source and focused density tests exist. |
 | **INV-11** | **Root Storage Fail-Closed** | $\text{Abort} \iff \text{FreeBytes} < 1024^3 \lor \text{FreePercent} < 5.0\%$. | `shared/lib/runtime/host_maintenance.js` | `tests/scripts/operational/host_maintenance.test.js` | Throws `Error('ENOSPC')`, writes 0 bytes, emits `storage_unavailable`. |
-| **INV-12** | **SHA-256 Forward Chaining** | $H_i = \text{SHA256}(\text{stableObject}(\text{event}_i))$ with $\text{prior\_checksum} = H_{i-1}$. | `backend/gateway/src/polymarket/paper_ledger.ts` | `tests/scripts/integration/gateway/paper_ledger_settlement.test.js` | $H_0 = 0^{64}$; single byte mutation in log halts replay immediately. |
+| **INV-12** | **SHA-256 Forward Chaining** | $H_i = \text{SHA256}(\text{stableObject}(\text{event}_i))$ with $\text{prior\_checksum} = H_{i-1}$. | `backend/execution/src/polymarket/paper_ledger.ts` | `tests/scripts/integration/gateway/paper_ledger_settlement.test.js` | $H_0 = 0^{64}$; single byte mutation in log halts replay immediately. |
 
 ---
 
@@ -2045,7 +2045,7 @@ flowchart TD
 
     subgraph Tier5["5. Risk Control & Execution Gateways"]
         RISK{"PreTradeRisk Microsecond Gate (PreTradeRisk.cpp)<br/>NAV <= 25% | Drawdown Reject >= 30% | Greeks Limits | Kill-Switch"}:::critical
-        GW["Unified Broker Gateways (backend/gateway/)<br/>Alpaca (Asymmetric Exit Dedup) | Polymarket (CLOB Fallback) | Deribit"]:::control
+        GW["Unified Broker Gateways (backend/execution/)<br/>Alpaca (Asymmetric Exit Dedup) | Polymarket (CLOB Fallback) | Deribit"]:::control
         RISK -->|"Pass"| GW
     end
 
@@ -2125,7 +2125,7 @@ flowchart TD
         T3["Tier 3: Prediction CLOB<br/>- Harmonic Imbalance (DIR5)<br/>- Sum < 1 Binary Arbitrage<br/>- CLOB Spread Fallback Model"]:::data
     end
 
-    subgraph Backtester["Native Compute Core (backend/core/src/backtest/)"]
+    subgraph Backtester["Native Compute Core (backend/cpp_core/src/backtest/)"]
         BT["FrameBacktester Engine (frame_backtester.cpp)<br/>- Native C++ Vectorized Data Traversal<br/>- Monte Carlo Bootstrap & Walk-Forward Validation<br/>- Mass Parameter Sweep Paths"]:::control
     end
 
@@ -2145,7 +2145,7 @@ flowchart TD
 
     SIG --> R1
 
-    subgraph Gateways["Unified Broker Gateways (backend/gateway/)"]
+    subgraph Gateways["Unified Broker Gateways (backend/execution/)"]
         GW_ALP["AlpacaAdapter<br/>- 10:1 Symbol Netting Exit Dedup<br/>- Asymmetric Buy Cap ($5) / Sell Exempt"]:::control
         GW_POLY["PolymarketAdapter<br/>- CLOB Spread Fallback (> $0.10)<br/>- Multi-Outcome Bundle Orders (Sequential Post, Partial Exposure Telemetry)"]:::control
         GW_DERI["DeribitAdapter<br/>- BTC-PERPETUAL Delta-Neutral Hedging"]:::control
@@ -2247,4 +2247,4 @@ flowchart TD
 6. **Node.js v20 LTS Documentation:** Native Filesystem, Streams, Crypto, and Test Runner.
 7. **Gatheral, J. (2004):** *A Parsimonious Model of the Volatility Surface*, Presentation at Quantitative Methods in Finance.
 8. **Whalley, A. E., & Wilmott, P. (1997):** *An Asymptotic Analysis of an Optimal Hedging Model for Option Portfolios with Transaction Costs*, Mathematical Finance, 7(3), 307-324.
-9. **Sovereign Repository Sources:** `backend/core/`, `shared/lib/`, `backend/gateway/`, `infra/docker/`, `docs/Reports/`.
+9. **Sovereign Repository Sources:** `backend/cpp_core/`, `shared/lib/`, `backend/execution/`, `infra/docker/`, `docs/Reports/`.

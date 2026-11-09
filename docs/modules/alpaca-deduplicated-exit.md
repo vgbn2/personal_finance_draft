@@ -2,7 +2,7 @@
 
 > **Status:** Implemented & Verified (ALPACA-EXIT-01)  
 > **Audience:** Algorithmic Developers, Execution Engineers, Risk Officers  
-> **Canonical owners:** `shared/lib/runtime/alpaca_bot_cycle.js`, `backend/gateway/src/index.ts`  
+> **Canonical owners:** `shared/lib/runtime/alpaca_bot_cycle.js`, `backend/execution/src/index.ts`  
 > **Review triggers:** Broker order sizing, notional limits, sub-position attribution, sell deduplication  
 
 ## Purpose And Non-Goals
@@ -26,10 +26,10 @@ This module provides deterministic, attribution-preserving order execution and a
 | Surface | Owner | Contract |
 |---|---|---|
 | `runAlpacaBotCycle(options)` | `shared/lib/runtime/alpaca_bot_cycle.js` | Evaluates active Alpaca paper strategies, aggregates same-symbol exits into single market orders, updates attribution state, and records history. |
-| `submitOrder(order)` | `backend/gateway/src/index.ts` | Gateway execution router; enforces `ALPACA_PAPER_MAX_NOTIONAL` strictly when `order.side === 'buy'`. |
-| `AlpacaAdapter.getPositions()` | `backend/gateway/src/adapters/alpaca_adapter.ts` | Returns broker positions preserving sellable `qty_available` alongside gross `quantity`. |
+| `submitOrder(order)` | `backend/execution/src/index.ts` | Gateway execution router; enforces `ALPACA_PAPER_MAX_NOTIONAL` strictly when `order.side === 'buy'`. |
+| `AlpacaAdapter.getPositions()` | `backend/execution/src/adapters/alpaca_adapter.ts` | Returns broker positions preserving sellable `qty_available` alongside gross `quantity`. |
 | `reconcilePositions(positions)` | `shared/lib/runtime/sub_positions_ledger.js` | Reconciles broker positions with virtual sub-positions, preserving `qty_available`. |
-| `AlpacaAdapter.cancelAllOrders()` | `backend/gateway/src/adapters/alpaca_adapter.ts` | Atomically cancels all open Alpaca broker orders. |
+| `AlpacaAdapter.cancelAllOrders()` | `backend/execution/src/adapters/alpaca_adapter.ts` | Atomically cancels all open Alpaca broker orders. |
 
 ---
 
@@ -41,7 +41,7 @@ Strategy Evaluator (10 AAPL Sub-Positions)
        ▼
 shared/lib/runtime/alpaca_bot_cycle.js
   ├── Aggregate Symbol Quantities (Sum Qty = 100.91 USD)
-  ├── Single Net Exit Dispatch ──► backend/gateway/src/index.ts
+  ├── Single Net Exit Dispatch ──► backend/execution/src/index.ts
   │                                  └── Check side === 'buy' (false: PASS without cap)
   └── Preserve Attribution ────► storage/data/cache/alpaca_bot_state.json
 ```
@@ -78,7 +78,7 @@ shared/lib/runtime/alpaca_bot_cycle.js
 
 ## Observability
 
-- **State File**: `storage/data/cache/alpaca_bot_state.json` (active positions and strategy attribution).
+- **State File**: `storage/data/cache/.../alpaca_bot_state.json` (active positions and strategy attribution).
 - **History Ledger**: `cycleHistory` array records net exit execution ID, gross proceeds, and per-strategy PnL attribution.
 - **Structured Logs**: Single error log format `[ALPACA-BOT] Exit order failed for ${symbol}: ${error}` replacing legacy multi-row warning loops.
 
@@ -94,4 +94,4 @@ shared/lib/runtime/alpaca_bot_cycle.js
   - Verifies backward compatibility when `qty_available` is omitted, falling back to gross quantity.
 - **Sub-Positions Ledger**: `tests/scripts/lib/sub_positions_ledger.test.js`
   - Verifies `reconcilePositions` preserves `qty_available` through the attribution layer.
-- **Gateway Notional Cap Contract**: Verified in `tests/scripts/operational/alpaca_paper_notional_cap.test.js`.
+- **Gateway Notional Cap Contract**: Verified in `tests/scripts/operational/alpaca_paper_bot.test.js`.

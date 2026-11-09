@@ -18,11 +18,11 @@
 
 ## 6. Visibility Gaps (Black Box Risks)
 - [x] **ML Pipeline Opacity**: `KronosTokenizer` and `KronosTensorBuilder` (C++) lack `[VISIBILITY]` logging. (FIXED: Added sampling logs, fingerprints, and boundary stats)
-- [x] **Ingest Traceability**: Ingest snapshots now add skipped `provider_checks` for disabled families and `--family` filters, with direct contract coverage in `scripts/tests/sovereign_cli.test.js`.
+- [x] **Ingest Traceability**: Ingest snapshots now add skipped `provider_checks` for disabled families and `--family` filters, with direct contract coverage in `tests/scripts/tui/cli_commands/sovereign_cli.test.js`.
 
 ## 7. Configuration Debt
 - [x] **Consolidate Breadth**: Breadth ratios were defined in both `data_sources.yaml` and `options_data.yaml`. (FIXED: Centralized in `data_sources.yaml`)
-- [x] **Manifest Parity**: `scripts/tui_cli/manifest.js` now tracks the active strategy labels and family options added to the CLI surface.
+- [x] **Manifest Parity**: `frontend/cli-tui/tui/manifest.js` now tracks the active strategy labels and family options added to the CLI surface.
 
 ## 4. Developer Feedback (Consolidated from .txt files)
 - **Features Zone**: "still empty, have a lot to do" (Referencing `label_builder.cpp`, `lookahead_guard.cpp`, etc.)
@@ -31,27 +31,27 @@
 - **Test Zone**: Earlier review flagged hardcoded tests, pass-only fixtures, and excessive branch complexity.
 
 ## 9. Code-Level Developer Feedback (via 'dev review' / 'dev suggest')
-- [x] `cpp_core/src/stats/stats_engine.cpp`: "confidence score= weighted of the above dev suggest" (RESOLVED)
-- [x] `cpp_core/src/stats/stats_engine.hpp`: "from 1-100 dev suggest" (RESOLVED)
+- [x] `backend/cpp_core/src/.../stats_engine.cpp`: "confidence score= weighted of the above dev suggest" (RESOLVED)
+- [x] `backend/cpp_core/src/.../stats_engine.hpp`: "from 1-100 dev suggest" (RESOLVED)
 
 ## 5. Granular Open Item List (C++ Core)
-- [x] **Real Sentiment Scoring**: Sentiment scoring lives in `features/sentiment_features.cpp` and is covered by `cpp_core/test/feature_pipeline_test.cpp`; `ml/sentiment_ingestion.cpp` remains a thin ingestion adapter.
+- [x] **Real Sentiment Scoring**: Sentiment scoring lives in `backend/cpp_core/src/features/sentiment_features.cpp` and is covered by `backend/cpp_core/test/.../feature_pipeline_test.cpp`; `backend/cpp_core/src/machine_learning/.../sentiment_ingestion.cpp` remains a thin ingestion adapter.
 - [ ] **Feature Engineering**: Implement `label_builder.cpp`, `lookahead_guard.cpp`, and `sentiment_features.cpp`.
 - [x] **Macro Features**: `macro_features.cpp` implemented with Rate Momentum and Liquidity Index.
 - [x] **Technical Features**: `technical_features.cpp` and `path_signature.cpp` active.
-- [ ] **Position Sizing**: Implement Kelly Criterion in `risk_management/position_sizing/kelly_sizer.cpp` (Phase 5).
-- [ ] **Exposure Management**: Implement multi-asset exposure in `portfolio/multi_asset.cpp` (Phase 5).
+- [ ] **Position Sizing**: Implement Kelly Criterion in `backend/cpp_core/src/risk_management/position_sizing/kelly_sizer.cpp` (Phase 5).
+- [ ] **Exposure Management**: Implement multi-asset exposure in `backend/cpp_core/src/portfolio/.../multi_asset.cpp` (Phase 5).
 - [ ] **ONNX Real Linkage**: Promote the deterministic baseline adapter into physical `onnxruntime` linkage when the dependency/toolchain gate is available.
 
 ## 8. Cleanup Priority for the Next Refactor Pass
-1. Normalize the ingestion boundary so `scripts/data_ops/ingest_market_data.js` stays the canonical manifest-driven orchestrator and any older helper stays a thin compatibility shim only if it is still called.
-2. Consolidate backfill/provider routing so `scripts/lib/backfill.js` owns chunking and parallel pagination, while the CLI only handles command orchestration.
-3. Lock the macro provider boundary so FRED and World Bank primitives stay in `scripts/lib/providers/macro.js` and are re-exported through `scripts/lib/providers/index.js` instead of being duplicated elsewhere.
+1. Normalize the ingestion boundary so `backend/scripts/data_ops/ingest_market_data.js` stays the canonical manifest-driven orchestrator and any older helper stays a thin compatibility shim only if it is still called.
+2. Consolidate backfill/provider routing so `shared/lib/data/backfill.js` owns chunking and parallel pagination, while the CLI only handles command orchestration.
+3. Lock the macro provider boundary so FRED and World Bank primitives stay in `shared/lib/providers/macro.js` and are re-exported through `shared/lib/providers/index.js` instead of being duplicated elsewhere.
 4. Add one path note in the workspace docs after the split is cleaned up so future passes can tell active code from legacy glue at a glance.
 5. Keep strategy catalogs honest about capability level: research-only signals, backtest-only models, and executable order flow should be labeled differently so UI and CLI surfaces do not overclaim broker support.
 
 ## 8b. Adapter Boundary Update - 2026-06-02
-- `shared/lib/adapters.js` has been reduced to a compatibility shim that re-exports the canonical provider and backfill modules.
+- `shared/lib/compat/adapters.js` has been reduced to a compatibility shim that re-exports the canonical provider and backfill modules.
 - The live ingest and backfill code now owns the behavior; the adapter module no longer carries its own duplicate fetch implementation.
 - Future cleanup should prefer removing compatibility imports entirely rather than widening the shim again.
 
@@ -64,8 +64,8 @@
   - Retires when: one canonical layout is recorded and a structural contract test guards the chosen entrypoints.
   - Owner: repo architecture maintainer.
 - [x] **Tracked Generated Artifacts**
-  - Fixed: root `node_modules`, `backend/gateway/node_modules`, `storage/data/cache`, and local `.mcp.json` were removed from the Git index with `git rm --cached` while staying on disk.
-  - Guard: `tests/scripts/structure_contract.test.js` asserts generated/local-only paths are ignored and not tracked.
+  - Fixed: root `node_modules`, `backend/execution/node_modules`, `storage/data/cache`, and local `.mcp.json` were removed from the Git index with `git rm --cached` while staying on disk.
+  - Guard: `tests/scripts/architecture/cli/core/structure_contract.test.js` asserts generated/local-only paths are ignored and not tracked.
   - Residual: future passes should still scan for other generated roots before release.
 - [ ] **Path Drift In Docs And Tests**
   - Deferred: full docs/test rewrite from legacy `cpp_core`, `web_page`, `web`, `scripts/lib`, and `scripts/cli` paths to active `backend/core`, `Frontend/dashboard`, `backend/api`, `shared/lib`, and `backend/cli` paths.

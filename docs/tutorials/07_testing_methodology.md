@@ -39,9 +39,9 @@ npm run bench:mini-pc  # 2-Core 1024MB Mini-PC profile (OMP=2, UV=4, 10us delay)
 
 `SOVEREIGN_BENCH_PROFILE` sets libuv threadpool sizing (`UV_THREADPOOL_SIZE`), OpenMP native thread scaling (`OMP_NUM_THREADS`), V8 memory caps (`NODE_OPTIONS`), and nanosecond CPU frequency delay simulation (`artificialDelayUs`).
 
-## Automated Anti-Cheating Test Governance (`scripts/dev/audit_test_integrity.js`)
+## Automated Anti-Cheating Test Governance (`tools/dev/audit_test_integrity.js`)
 
-AI coding agents working on complex repositories can engage in test-gaming ("cheating"). The static analysis scanner `scripts/dev/audit_test_integrity.js` automatically scans all test files under `tests/` and enforces 4 mandatory rules:
+AI coding agents working on complex repositories can engage in test-gaming ("cheating"). The static analysis scanner `tools/dev/audit_test_integrity.js` automatically scans all test files under `tests/` and enforces 4 mandatory rules:
 
 - **Rule 1 (Forbidden Internal Mocking)**: Stubs and mocks are permitted **ONLY** for external network/HTTP boundaries (`Alpaca`, `Polymarket`, `Binance`, `Yahoo`, `Stooq`, `CoinGecko`). Core domain engines (`validation.js`, `ts_index_storage.js`, `backtest.js`, `paper_ledger.js`, `strategy.js`, `cli_executor.js`, `equity_session.js`, `quote_router.js`) **MUST NEVER** be mocked or stubbed.
 - **Rule 2 (Strict Assertion Enforcement)**: Loose boolean assertions cannot replace strict equality (`assert.equal`, `assert.deepEqual`).
@@ -125,7 +125,7 @@ with CTest. Read the emitted discovery/pass/fail counts rather than relying on a
 ```bash
 npm run hygiene
 ```
-runs `scripts/dev/check_hygiene.js`, which checks five categories: **Git Noise** (tracked artifacts that
+runs `tools/dev/check_hygiene.js`, which checks five categories: **Git Noise** (tracked artifacts that
 should be ignored), **Symlinks** (broken links, submodule drift), **Agent Skills** (stale skill folders),
 **Code Markers** (lingering TODO/FIXME/"dev review" comments), **Docs Alignment** (presence of the
 workspace truth files). This is a fast, deterministic pass-worth-running before claiming any session's

@@ -69,7 +69,7 @@ $$\Delta t(L; N, \gamma, \beta) = \gamma \cdot \frac{L^\beta}{N \cdot 300^{\beta
 
 ## Curated Default Universes & Selection Modes
 
-Default contract universes are defined in `config/markets/data_sources.yaml` and `config/polymarket_scope.json`:
+Default contract universes are defined in `configs/markets/data_sources.yaml` and `configs/polymarket_scope.json`:
 
 - **Macro**: `fed_rate_cut_prob`, `us_cpi_target`, `us_recession_2026`
 - **Crypto**: `btc_price_milestone`, `eth_etf_inflows`, `eth_price_target`, `sol_target`, `poly_btc_15m_rolling`

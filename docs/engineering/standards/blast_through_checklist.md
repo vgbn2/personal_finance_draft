@@ -53,8 +53,8 @@ Mark only the sections actually checked in the current blast-through.
 If a child section was checked, do not also mark its parent unless the parent was reviewed separately.
 
 - [ ] `backend/`
-- [ ] `backend/cli/commands`
-- [ ] `backend/cli/tui`
+- [ ] `frontend/cli-tui/commands`
+- [ ] `frontend/cli-tui/tui`
 - [ ] `backend/cli`
 - [ ] `backend/api/server`
 - [ ] `backend/api`
@@ -63,15 +63,15 @@ If a child section was checked, do not also mark its parent unless the parent wa
 - [ ] `backend/mcp_server`
 - [ ] `backend/scripts`
 - [ ] `Frontend/`
-- [ ] `Frontend/dashboard/`
+- [ ] `frontend/dashboard/`
 - [ ] `shared/lib`
 - [ ] `shared/lib/providers`
-- [ ] `shared/lib/backfill.js`
-- [ ] `shared/lib/strategy_registry.js`
-- [ ] `shared/lib/prop_firms.js`
+- [ ] `shared/lib/data/backfill.js`
+- [ ] `shared/lib/strategy/registry.js`
+- [ ] `shared/lib/profiles/prop_firms.js`
 - [ ] `shared/`
-- [ ] `Frontend/dashboard/src`
-- [ ] `Frontend/dashboard/dist`
+- [ ] `frontend/dashboard/src`
+- [ ] `frontend/dashboard/dist`
 - [ ] `config/`
 - [ ] `config/markets`
 - [ ] `config/strategies`
@@ -108,8 +108,8 @@ If a child section was checked, do not also mark its parent unless the parent wa
 - [ ] `workspace/HANDOFF.md`
 - [ ] `workspace/SESSION_MEMORY.md`
 - [ ] `workspace/PROMPT_LOG.md`
-- [ ] Generated/local-only roots: `node_modules/`, `build/`, `dist/`, `Frontend/dashboard/node_modules/`, `Frontend/dashboard/dist/`, `storage/data/cache/`, `storage/data/ts/`, `graphify-out/`
-- [ ] Legacy/compatibility paths: `data/`, `scripts/`, `shared/lib/adapters.js`, `backend/cli/sovereign_cli.og.js`, `docs/archive/`
+- [ ] Generated/local-only roots: `node_modules/`, `build/`, `dist/`, `frontend/dashboard/node_modules/`, `frontend/dashboard/dist/`, `storage/data/cache/`, `storage/data/ts/`, `graphify-out/`
+- [ ] Legacy/compatibility paths: `data/`, `scripts/`, `shared/lib/compat/adapters.js`, `frontend/cli-tui/sovereign_cli.js`, `docs/archive/`
 
 ### Section Status Notes
 
@@ -183,9 +183,9 @@ This checklist tracks the current state of the active repo surface, not the earl
 
 ## 1. Active Zones
 
-- [x] `backend/cli/` is functioning as the primary local CLI and orchestration surface.
-- [x] `backend/core/src/` now contains real implementations for the major feature, portfolio, execution, research, and data seams.
-- [x] `backend/api/` and `Frontend/dashboard/` now read as an active local dashboard/API bridge.
+- [x] `frontend/cli-tui/` is functioning as the primary local CLI and orchestration surface.
+- [x] `backend/cpp_core/src/` now contains real implementations for the major feature, portfolio, execution, research, and data seams.
+- [x] `backend/api/` and `frontend/dashboard/` now read as an active local dashboard/API bridge.
 - [x] `docs/` describe the current prototype instead of a pure setup shell.
 - [x] `config/` labels the app as an active prototype.
 - [x] Strategy-plan fixtures and CLI help no longer advertise a setup-only strategy file.
@@ -203,9 +203,9 @@ This checklist tracks the current state of the active repo surface, not the earl
 ## 2. Current Grade Snapshot
 
 - `repo-root`: B
-- `backend/cli/`: B+
-- `backend/core/src/`: B+
-- `backend/api/ + Frontend/dashboard/`: B+
+- `frontend/cli-tui/`: B+
+- `backend/cpp_core/src/`: B+
+- `backend/api/ + frontend/dashboard/`: B+
 - `docs/`: B+
 - `workspace/`: B
 - `config/`: B+

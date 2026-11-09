@@ -47,7 +47,7 @@ That means:
 - Seeds master fixtures, builds C++20 engine (`npm run native:build`), and executes all 34 native CTests
 
 `npm run docs:filter`
-- Executes `scripts/dev/filter_docs.js` (with `--strict` for CI validation)
+- Executes `tools/dev/filter_docs.js` (with `--strict` for CI validation)
 - Asserts 0 uncataloged files, 0 stale references, 0 broken relative links, and 0 unrendered box-art diagrams
 
 `npm run test:contracts`
@@ -140,7 +140,7 @@ Deployment:
 
 Input data:
 
-- config loading from `config/markets/data_sources.yaml`
+- config loading from `configs/markets/data_sources.yaml`
 - backfill integrity
 - indicator data flow
 - macro history mapping from FRED

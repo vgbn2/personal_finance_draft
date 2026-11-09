@@ -68,7 +68,7 @@ Focused source evidence:
 
 - `tests/scripts/strategy/rsi_backtest_primitives.test.js` checks indicator warm-up and bounds, Beta and Student-t primitives against closed-form or convergence references, quantile interpolation, and degenerate posterior behavior.
 - `tests/scripts/strategy/rsi_backtest_analyze.test.js` uses a seeded OHLCV fixture to exercise the full RSI-to-ATR-to-crossover-to-summary-to-actionable pipeline, output schema, OOS filtering, and deterministic sort behavior.
-- `docs/codebase_tour/07_testing_methodology.md` explains why the seeded fixture is preferable to volatile external data for this research contract.
+- `docs/tutorials/07_testing_methodology.md` explains why the seeded fixture is preferable to volatile external data for this research contract.
 
 These tests establish local source behavior. They do not prove a forecast, alpha, provider correctness, data freshness, native parity, paper performance, live performance, or deployment qualification.
 

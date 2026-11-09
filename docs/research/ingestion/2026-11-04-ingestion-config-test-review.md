@@ -6,7 +6,7 @@ Date: 2026-11-04. Scope: **connective-tissue**, **Hard Reading Mode**, audit onl
 
 The audit below describes baseline `26245ae7`. The user subsequently requested removal of incomplete Kalshi historical markets/candlesticks and assessment of existing Polymarket backfilling. The two Kalshi history function declarations and their imports/exports were removed; current Kalshi snapshot support remains. History dispatch still rejects unsupported Kalshi requests rather than silently returning current data. Updated real-module contract tests failed before removal and passed afterward: eight focused ingest/research tests, syntax checks, and anti-cheat (zero strikes). No live backfill was run. This follow-up does not repair the seven baseline audit findings.
 
-Requested retained capabilities, traced to `config/markets/data_sources.yaml`:
+Requested retained capabilities, traced to `configs/markets/data_sources.yaml`:
 
 - Yahoo breadth (`154–157`, `190–193`): ETF ratios `SPY/RSP`, `QQQ/SPY`, `IWM/SPY`, not constituent advance/decline counts. The fetcher remains incomplete.
 - OpenSky (`102–106`): regional aircraft count, average velocity/altitude, and on-ground share; not individual flight histories.
@@ -35,7 +35,7 @@ All findings below have primary fault domain `our_source`, confidence **proven w
 
 ### Additional verified limitations, not invented outages
 
-- `backend/gateway/src/adapters/gate_io_adapter.ts:220–235` refuses `getQuote` without credentials, although Gate documents public market ticker endpoints. This is **repository over-gating**, not an upstream requirement for market-data keys. Its return value is a logged `0` unavailable sentinel; downstream risk effects were not established.
+- `backend/execution/src/adapters/gate_io_adapter.ts:220–235` refuses `getQuote` without credentials, although Gate documents public market ticker endpoints. This is **repository over-gating**, not an upstream requirement for market-data keys. Its return value is a logged `0` unavailable sentinel; downstream risk effects were not established.
 - `shared/lib/providers/binance.js:60` implements a real public closed-kline WebSocket feed, persistence, reconnect, and stop handling. Exact named-reference search under `shared/`, `backend/`, and `tests/` found its definition and export only. **No direct named caller was found**; this is not proof against every possible dynamic/SDK wiring path.
 - `tests/scripts/integration/polymarket/polymarket_tunable_backfill.test.js:130–148` asserts success for symbol/volume filter scenarios without asserting the selected market set. The oracle is narrower than the test title; no production filtering failure is claimed.
 

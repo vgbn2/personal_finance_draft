@@ -50,8 +50,8 @@ flowchart TD
 ```mermaid
 flowchart TD
     subgraph Presentation["Presentation & Control Containers"]
-        CLI["Sovereign CLI & Ink TUI<br/>backend/cli/sovereign_cli.js<br/>Zero-alloc terminal views<br/>[Load: 2/10 | RSS: <30MB]"]
-        DASH["React 19 + Vite Web Dashboard<br/>Frontend/dashboard/src/<br/>Real-time WS state bridge<br/>[Load: 3/10 | Browser DOM]"]
+        CLI["Sovereign CLI & Ink TUI<br/>frontend/cli-tui/sovereign_cli.js<br/>Zero-alloc terminal views<br/>[Load: 2/10 | RSS: <30MB]"]
+        DASH["React 19 + Vite Web Dashboard<br/>frontend/dashboard/src/<br/>Real-time WS state bridge<br/>[Load: 3/10 | Browser DOM]"]
         MCP["Model Context Protocol (MCP)<br/>backend/mcp_server/index.ts<br/>AI Strategy discovery tools<br/>[Load: 2/10 | Heap: <40MB]"]
     end
 
@@ -95,11 +95,11 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    BOT["Strategy Discovery / Live Bot Cycle<br/>scripts/strategies/auto_strategy_explorer.js<br/>shared/lib/runtime/alpaca_bot_cycle.js"]
+    BOT["Strategy Discovery / Live Bot Cycle<br/>tools/strategies/auto_strategy_explorer.js<br/>shared/lib/runtime/alpaca_bot_cycle.js"]
     ALLOC["1. Virtual Sub-Position Allocator<br/>shared/lib/runtime/sub_positions_ledger.js<br/>- Allocates target quantity to virtual slice<br/>- Emits signature: strat_id_tf_ts_entropy<br/>[Load: 3/10]"]
-    RISK["2. Pre-Trade Risk Manager<br/>backend/core/src/risk/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
+    RISK["2. Pre-Trade Risk Manager<br/>backend/cpp_core/src/risk_management/<br/>- CB1: Max Drawdown (<15.0%)<br/>- CB2: Max Concentration (<25.0%)<br/>- CB3: Fat-Finger Deviation (<5.0%)<br/>- Evaluation SLA: <15µs<br/>[Load: 7/10]"]
     QUANT["3. Broker Sizing Quantizer<br/>shared/lib/runtime/alpaca_bot_cycle.js<br/>- Clamps quantity to step_size and min_notional<br/>- Enforces integer lots vs fractional limits<br/>[Load: 2/10]"]
-    GATEWAY["4. Execution Gateway<br/>backend/gateway/src/adapters/alpaca_adapter.ts<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
+    GATEWAY["4. Execution Gateway<br/>backend/execution/src/adapters/alpaca_adapter.ts<br/>- Dispatches authenticated order<br/>- Records fill to paper ledger JSONL<br/>[Load: 4/10]"]
 
     BOT -->|Signal: symbol, side, qty| ALLOC
     ALLOC -->|Pre-Trade Verification Request| RISK
@@ -115,13 +115,13 @@ The repository enforces strict module separation and unidirectional dependency f
 
 | Subsystem / Directory | Primary Language / Stack | Responsibility & Domain Ownership |
 |---|---|---|
-| `backend/core/` | C++20 (CMake 3.15+) | High-performance binary TS merger, frame backtester, pre-trade risk engine |
-| `backend/gateway/` | TypeScript / Node.js | Broker adapters (Alpaca, Polymarket, MT5) & cryptographic paper ledger |
-| `backend/cli/` | Node.js (Ink 5 TUI) | Terminal UI dashboard, command handlers, and interactive menus |
+| `backend/cpp_core/` | C++20 (CMake 3.15+) | High-performance binary TS merger, frame backtester, pre-trade risk engine |
+| `backend/execution/` | TypeScript / Node.js | Broker adapters (Alpaca, Polymarket, MT5) & cryptographic paper ledger |
+| `frontend/cli-tui/` | Node.js (Ink 5 TUI) | Terminal UI dashboard, command handlers, and interactive menus |
 | `backend/api/` | Node.js (`node:http`) | Authenticated REST API & Socket.IO telemetry bridge (port 8787) |
 | `backend/mcp_server/` | Node.js (JSON-RPC) | Model Context Protocol server for AI agent tool execution |
 | `shared/lib/` | JavaScript / CommonJS | Technical indicators (`IndicatorMethods`), quote routing, virtual ledger |
-| `Frontend/dashboard/` | React 19 + TypeScript + Vite | Real-time browser trading dashboard with CDP mock testing |
+| `frontend/dashboard/` | React 19 + TypeScript + Vite | Real-time browser trading dashboard with CDP mock testing |
 | `config/` | YAML / JSON | System environment manifests, risk policies, curated strategy definitions |
 | `storage/data/` | Binary (`SOVT`) / JSON | Binary time-series files (`ts/`), provider caches, runtime paper ledger |
 | `tests/` | Node.js test runner | Architecture contracts, data regressions, API contracts, hygiene |
@@ -165,7 +165,7 @@ Only the node designated with `SOVEREIGN_DEPLOYMENT_PROFILE=central-host` has au
 The repository operates locally without external API keys or cloud services:
 - Unit, safety, and integration tests execute against recorded fixtures (`tests/fixtures/`).
 - Market data ingestion uses public endpoints (Binance, Yahoo) or mock generators.
-- Prediction market execution uses the internal virtual paper ledger (`backend/gateway/src/paper_ledger.js`).
+- Prediction market execution uses the internal virtual paper ledger (`backend/execution/src/paper_ledger.js`).
 - Real-money API credentials exist solely on the isolated production host (`hpdesk-1`).
 
 ### 3. Fail-Closed Execution Policy
