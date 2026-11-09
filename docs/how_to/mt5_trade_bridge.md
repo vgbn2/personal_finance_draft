@@ -9,22 +9,23 @@ Technical documentation for the Sovereign MetaTrader 5 execution bridge, native 
 Sovereign decouples quantitative strategy research and order orchestration from MetaTrader 5 terminal execution through an out-of-process, reverse-TCP socket architecture.
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      Sovereign Execution Engine                         │
-│  frontend/cli-tui/commands/trade/trade.js  │  backend/execution/src/index.ts   │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │
-                        [Pre-Trade Risk & Policy Gate]
-                        - MFA PIN Gate (verifyPin)
-                        - Global Kill Switch (storage/data/kill_switch.json)
-                        - Native C++ Risk Engine (Drawdown & Exposure checks)
-                        - MagicCodec Strategy Attribution
-                                     │
-┌────────────────────────────────────▼────────────────────────────────────┐
-│                    Mt5Adapter (TCP Socket Server)                       │
-│  backend/execution/src/adapters/mt5_adapter.ts                            │
-│  Listening on 127.0.0.1:8282 (MT5_BRIDGE_PORT)                          │
-└────────────────────────────────────▲────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│                      Sovereign Execution Engine                       │
+│  trade CLI: frontend/cli-tui/commands/trade/trade.js                  │
+│  Execution Core: backend/execution/src/index.ts                       │
+└───────────────────────────────────┬───────────────────────────────────┘
+                                    │
+                       [Pre-Trade Risk & Policy Gate]
+                       - MFA PIN Gate (verifyPin)
+                       - Global Kill Switch (storage/data/kill_switch.json)
+                       - Native C++ Risk Engine (Drawdown & Exposure checks)
+                       - MagicCodec Strategy Attribution
+                                    │
+┌───────────────────────────────────▼───────────────────────────────────┐
+│                    Mt5Adapter (TCP Socket Server)                     │
+│  backend/execution/src/adapters/mt5_adapter.ts                        │
+│  Listening on 127.0.0.1:8282 (MT5_BRIDGE_PORT)                        │
+└───────────────────────────────────▲───────────────────────────────────┘
                                      │
                    Reverse-TCP Stream (JSON Lines \n)
                    Inbound connection from EA client
