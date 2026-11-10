@@ -35,6 +35,9 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Verify committed archive across all package roots
         run: npm run verify:committed-archive -- --evidence-out "$RUNNER_TEMP/sovereign-source-evidence.json"
 
@@ -77,6 +80,9 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             frontend/dashboard/package-lock.json
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Cache C++ core build
         id: cache-native-core

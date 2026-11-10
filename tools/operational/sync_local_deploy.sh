@@ -108,7 +108,17 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-PROXMOX_SSH="${SOVEREIGN_PROXMOX_SSH:-ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}}"
+PROXMOX_SSH="${SOVEREIGN_PROXMOX_SSH:-}"
+if [[ -z "${PROXMOX_SSH}" ]]; then
+  if ssh -o ConnectTimeout=5 -o BatchMode=yes "${PROXMOX_USER}@${PROXMOX_HOST}" "echo ok" &>/dev/null; then
+    PROXMOX_SSH="ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}"
+  elif ssh -o ConnectTimeout=5 -o BatchMode=yes dell-ts "ssh hpdesk echo ok" &>/dev/null; then
+    echo "==> Direct SSH to ${PROXMOX_HOST} unavailable; routing via cluster peer dell-ts -> hpdesk"
+    PROXMOX_SSH="ssh dell-ts ssh hpdesk"
+  else
+    PROXMOX_SSH="ssh -o ConnectTimeout=10 ${PROXMOX_USER}@${PROXMOX_HOST}"
+  fi
+fi
 
 # Verify Proxmox reachable
 if ! $PROXMOX_SSH "echo ok" &>/dev/null; then

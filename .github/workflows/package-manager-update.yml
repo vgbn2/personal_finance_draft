@@ -1,0 +1,44 @@
+name: Package Manager & Dependency Automation
+
+on:
+  schedule:
+    - cron: '0 4 * * 1' # Every Monday at 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automate-package-manager:
+    name: Automate Package Manager & Workspace Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack & Package Manager
+        run: |
+          corepack enable
+          node -e '
+            const pkg = require("./package.json");
+            if (pkg.packageManager) {
+              console.log("Configuring packageManager:", pkg.packageManager);
+              require("child_process").execSync("corepack prepare " + pkg.packageManager + " --activate", { stdio: "inherit" });
+            }
+          '
+          npm --version
+
+      - name: Run Workspace Dependency Updates
+        run: node tools/dev/update_packages.js
+
+      - name: Verify Workspace Build & Integrity
+        run: |
+          npm run typecheck
+          npm run hygiene
+          npm run test:structure

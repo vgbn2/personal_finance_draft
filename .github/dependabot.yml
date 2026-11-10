@@ -24,6 +24,66 @@ updates:
         patterns:
           - "*"
 
+  - package-ecosystem: "npm"
+    directory: "/backend/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/backend/execution"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "ethers"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@alpacahq/alpaca-trade-api"
+        update-types: ["version-update:semver-major"]
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/backend/mcp_server"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend/dashboard"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+    groups:
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "vite"
+      production-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
