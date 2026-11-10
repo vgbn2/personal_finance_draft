@@ -1,6 +1,5 @@
 let TradingView = null;
 try { TradingView = require('@mathieuc/tradingview'); } catch { /* optional dep — not installed in all envs */ }
-const { isFiniteNumber } = require('../market/validation');
 
 /**
  * Fetches real-time or delayed quotes and metadata (sector/industry) for a list of symbols.
@@ -11,7 +10,29 @@ async function fetchTradingViewQuotes(symbols) {
   if (!TradingView) return [];
   if (!symbols || symbols.length === 0) return [];
 
-  return new Promise((resolve, reject) => {
+  if (typeof TradingView.getQuotes === 'function') {
+    const quotes = await TradingView.getQuotes({ symbols, timeout: 15000 }).catch((err) => {
+      console.error('[TradingView] Quote fetch error:', err?.message || err);
+      return {};
+    });
+    return Object.entries(quotes).map(([fullSymbol, data]) => ({
+      symbol: fullSymbol.split(':').pop(),
+      exchange: fullSymbol.split(':')[0],
+      full_symbol: fullSymbol,
+      provider: 'tradingview',
+      timestamp: new Date().toISOString(),
+      price: data.lp,
+      bid: data.bid,
+      ask: data.ask,
+      volume: data.volume,
+      sector: data.sector || null,
+      industry: data.industry || null,
+      description: data.description || data.local_description || null,
+      source: 'tradingview-ws'
+    }));
+  }
+
+  return new Promise((resolve) => {
     const client = new TradingView.Client();
     const results = [];
     let receivedCount = 0;
