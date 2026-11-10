@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -32,7 +33,9 @@ async function stopProcess(child) {
 }
 
 export async function startDashboardServer(port = 4173) {
-  const child = spawn(path.resolve('node_modules/.bin/vite'), [
+  const localVite = path.resolve('node_modules/.bin/vite');
+  const viteBin = existsSync(localVite) ? localVite : path.resolve('../../node_modules/.bin/vite');
+  const child = spawn(viteBin, [
     'preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort',
   ], { stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';

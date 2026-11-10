@@ -92,10 +92,30 @@ test('workspace manifests agree with root and package-local lockfiles', () => {
 });
 
 test('CI dependencies use non-interactive transports', () => {
-  const packageJson = read('package.json');
-  const packageLock = read('package-lock.json');
+  const manifestPaths = [
+    'package.json',
+    'package-lock.json',
+    'backend/api/package.json',
+    'backend/api/package-lock.json',
+    'backend/execution/package.json',
+    'backend/execution/package-lock.json',
+    'backend/mcp_server/package.json',
+    'backend/mcp_server/package-lock.json',
+    'frontend/dashboard/package.json',
+    'frontend/dashboard/package-lock.json',
+  ];
+  for (const relPath of manifestPaths) {
+    const content = read(relPath);
+    assert.doesNotMatch(content, /github:Mathieu2301\/TradingView-API/, `${relPath} must not use github: shorthand`);
+    assert.doesNotMatch(content, /git\+ssh:\/\//, `${relPath} must not use git+ssh transport`);
+    assert.doesNotMatch(content, /git\+https:\/\/github\.com\/Mathieu2301\/TradingView-API/, `${relPath} must use npm registry instead of git transport`);
+  }
 
-  assert.doesNotMatch(packageJson, /github:Mathieu2301\/TradingView-API/);
-  assert.match(packageJson, /git\+https:\/\/github\.com\/Mathieu2301\/TradingView-API\.git#574a9948b2adb3396b934c612f58d2ab103a6915/);
-  assert.match(packageLock, /TradingView-API\.git#574a9948b2adb3396b934c612f58d2ab103a6915/);
+  const rootPkg = JSON.parse(read('package.json'));
+  const rootLock = JSON.parse(read('package-lock.json'));
+  assert.match(rootPkg.dependencies['@mathieuc/tradingview'], /^\^?\d+\.\d+\.\d+/);
+  assert.match(
+    rootLock.packages['node_modules/@mathieuc/tradingview']?.resolved || '',
+    /^https:\/\/registry\.npmjs\.org\/@mathieuc\/tradingview\/-\/tradingview-/,
+  );
 });
