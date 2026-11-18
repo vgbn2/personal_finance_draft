@@ -1,7 +1,6 @@
 import { BrokerAdapter, Position, TradeOrder } from './types';
 
-// @ts-ignore
-const Alpaca = require('@alpacahq/alpaca-trade-api');
+import { Alpaca, trading, orders } from '@alpacahq/alpaca-trade-api';
 const { normalizeAlpacaPosition, resolveAlpacaSettings, toAlpacaTradeSymbol } = require('../../../../shared/lib/brokers/alpaca_env');
 
 export interface AlpacaAdapterOptions {
@@ -26,23 +25,81 @@ export class AlpacaAdapter implements BrokerAdapter {
 
     if (options.client) {
       this.alpaca = options.client;
+      // ponytail: retain the existing legacy injection seam, not a second runtime owner.
+      if (!this.alpaca.trading) {
+        const legacy = options.client;
+        const latestQuote = async (symbol: string) => {
+          const quote = await legacy.getLatestQuote(symbol);
+          return {
+            ap: quote?.AskPrice ?? quote?.askPrice ?? quote?.ap,
+            bp: quote?.BidPrice ?? quote?.bidPrice ?? quote?.bp,
+          };
+        };
+        this.alpaca = {
+          trading: {
+            account: {
+              getAccount: async () => trading.AccountFromJSON(await legacy.getAccount()),
+            },
+            positions: {
+              getAllOpenPositions: async () => (await legacy.getPositions()).map(trading.PositionFromJSON),
+            },
+            orders: {
+              postOrder: async ({ createOrderRequest }: trading.PostOrderRequest) => trading.OrderFromJSON(
+                await legacy.createOrder(trading.CreateOrderRequestToJSON(createOrderRequest)),
+              ),
+              getAllOrders: async (query: trading.GetAllOrdersRequest) => (await legacy.getOrders(query)).map(trading.OrderFromJSON),
+              deleteOrderByOrderID: ({ orderId }: trading.DeleteOrderByOrderIDRequest) => legacy.cancelOrder(orderId),
+            },
+          },
+          marketData: {
+            stocks: {
+              stockLatestQuoteSingle: async ({ symbol }: { symbol: string }) => ({ quote: await latestQuote(symbol) }),
+            },
+            crypto: {
+              cryptoLatestQuotes: async ({ symbols }: { symbols: string }) => ({ quotes: { [symbols]: await latestQuote(symbols) } }),
+            },
+          },
+        };
+      }
     } else if (keyId && secretKey) {
-      // Compatibility layer: supports both SDK v3 function export and v4 namespace/default object exports
-      const AlpacaModule = require('@alpacahq/alpaca-trade-api');
-      const AlpacaConstructor = typeof AlpacaModule === 'function'
-        ? AlpacaModule
-        : (AlpacaModule?.Alpaca || AlpacaModule?.default || AlpacaModule);
-      this.alpaca = new AlpacaConstructor({
+      const credentials = {
         keyId,
-        secretKey,
+        secret: secretKey,
         paper,
-        baseUrl: settings.baseUrl,
+      };
+      // The facade ignores baseUrl; generated APIs honor Configuration.basePath.
+      const config = new trading.Configuration({
+        ...credentials,
+        basePath: settings.baseUrl.replace(/\/+$/, ''),
       });
+      this.alpaca = {
+        trading: {
+          account: new trading.AccountsApi(config),
+          positions: new trading.PositionsApi(config),
+          orders: new trading.OrdersApi(config),
+        },
+        marketData: new Alpaca(credentials).marketData,
+      };
     }
   }
 
   private hasCredentials(): boolean {
     return Boolean(this.alpaca);
+  }
+
+  private finiteNumber(value: unknown, field: string): number {
+    if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) {
+      throw new Error(`Malformed Alpaca ${field}`);
+    }
+    return Number(value);
+  }
+
+  private async submitOrder(payload: orders.OrderInput): Promise<any> {
+    const result = await this.alpaca.trading.orders.postOrder({
+      createOrderRequest: orders.buildOrder(payload),
+    });
+    if (!result?.id || !result?.status) throw new Error('Malformed Alpaca order response');
+    return result;
   }
 
   async placeOrder(order: TradeOrder): Promise<{ orderId: string; status: string }> {
@@ -61,25 +118,30 @@ export class AlpacaAdapter implements BrokerAdapter {
 
     try {
       const symbol = toAlpacaTradeSymbol(order.instrumentId);
+      if (!symbol || !Number.isFinite(order.quantity) || order.quantity <= 0 ||
+          !['buy', 'sell'].includes(order.side) || !['market', 'limit'].includes(order.type)) {
+        throw new Error('Invalid Alpaca order');
+      }
       const isCrypto = symbol.includes('/');
       const isFractional = !Number.isInteger(order.quantity);
-      const payload: any = {
+      const payload: orders.OrderInput = {
         symbol,
         qty: order.quantity,
         side: order.side,
         type: order.type,
-        time_in_force: isCrypto ? 'gtc' : (isFractional ? 'day' : 'gtc'),
+        timeInForce: isCrypto ? 'gtc' : (isFractional ? 'day' : 'gtc'),
       };
 
       if (order.clientOrderId) {
-        payload.client_order_id = order.clientOrderId;
+        payload.clientOrderId = order.clientOrderId;
       }
 
-      if (order.type === 'limit' && order.price) {
-        payload.limit_price = order.price;
+      if (order.type === 'limit') {
+        if (!Number.isFinite(order.price) || order.price! <= 0) throw new Error('Invalid Alpaca limit price');
+        payload.limitPrice = order.price;
       }
 
-      const alpacaOrder = await this.alpaca.createOrder(payload);
+      const alpacaOrder = await this.submitOrder(payload);
       return {
         orderId: alpacaOrder.id,
         status: alpacaOrder.status,
@@ -95,7 +157,7 @@ export class AlpacaAdapter implements BrokerAdapter {
     if (!this.hasCredentials()) {
       return this.simulateIfMissingCredentials;
     }
-    await this.alpaca.cancelOrder(orderId);
+    await this.alpaca.trading.orders.deleteOrderByOrderID({ orderId });
     return true;
   }
 
@@ -109,11 +171,11 @@ export class AlpacaAdapter implements BrokerAdapter {
     }
 
     try {
-      const account = await this.alpaca.getAccount();
+      const account = await this.alpaca.trading.account.getAccount();
       return {
-        USD: Number(account.cash || 0),
-        BUYING_POWER: Number(account.buying_power || 0),
-        EQUITY: Number(account.equity || 0)
+        USD: this.finiteNumber(account?.cash, 'cash'),
+        BUYING_POWER: this.finiteNumber(account?.buyingPower, 'buying power'),
+        EQUITY: this.finiteNumber(account?.equity, 'equity'),
       };
     } catch (err: any) {
       throw new Error(`Alpaca SDK Account Error: ${err.message}`);
@@ -128,33 +190,52 @@ export class AlpacaAdapter implements BrokerAdapter {
     }
 
     try {
-      const positions = await this.alpaca.getPositions();
+      const positions = await this.alpaca.trading.positions.getAllOpenPositions();
+      if (!Array.isArray(positions)) throw new Error('Malformed Alpaca positions');
 
-      // Enrich positions with order submission / fill history via Alpaca getOrders API
+      // ponytail: enrich only the latest 500 orders; paginate when full attribution is required.
       let orderMap: Record<string, { submitted_at?: string; filled_at?: string; client_order_id?: string }> = {};
       try {
-        const closedOrders = await this.alpaca.getOrders({ status: 'all', limit: 500, nested: false });
+        const closedOrders = await this.alpaca.trading.orders.getAllOrders({
+          status: 'all',
+          limit: 500,
+          nested: false,
+          direction: 'desc',
+        });
         if (Array.isArray(closedOrders)) {
           for (const ord of closedOrders) {
             const rawSym = String(ord.symbol || '').toUpperCase();
             const sym = rawSym.replace('/', '');
-            if (sym && (!orderMap[sym] || (ord.filled_at && orderMap[sym].filled_at && ord.filled_at > orderMap[sym].filled_at!))) {
+            const submitted = ord.submittedAt ?? ord.createdAt;
+            const filled = ord.filledAt;
+            if ((submitted && !Number.isFinite(submitted.getTime())) || (filled && !Number.isFinite(filled.getTime()))) continue;
+            const submittedAt = submitted?.toISOString();
+            const filledAt = filled?.toISOString();
+            if (sym && (!orderMap[sym] || (filledAt && orderMap[sym].filled_at && filledAt > orderMap[sym].filled_at!))) {
               orderMap[sym] = {
-                submitted_at: ord.submitted_at || ord.created_at,
-                filled_at: ord.filled_at,
-                client_order_id: ord.client_order_id
+                submitted_at: submittedAt,
+                filled_at: filledAt,
+                client_order_id: ord.clientOrderId,
               };
             }
           }
         }
-      } catch {
-        // Non-fatal if order history enrichment fails
+      } catch (err: any) {
+        console.warn(`[ALPACA-SDK] Order history enrichment unavailable: ${err.message}`);
       }
 
       return positions.map((p: any) => {
+        if (!p?.symbol) throw new Error('Malformed Alpaca position symbol');
         const rawSym = String(p.symbol || '').toUpperCase();
         const sym = rawSym.replace('/', '');
-        return normalizeAlpacaPosition(p, orderMap[sym] || orderMap[rawSym]);
+        return normalizeAlpacaPosition({
+          symbol: p.symbol,
+          qty: this.finiteNumber(p.qty, 'position quantity'),
+          qty_available: p.qtyAvailable == null ? undefined : this.finiteNumber(p.qtyAvailable, 'available quantity'),
+          avg_entry_price: this.finiteNumber(p.avgEntryPrice, 'entry price'),
+          market_value: this.finiteNumber(p.marketValue, 'market value'),
+          unrealized_pl: this.finiteNumber(p.unrealizedPl, 'unrealized P/L'),
+        }, orderMap[sym] || orderMap[rawSym]);
       });
     } catch (err: any) {
       throw new Error(`Alpaca SDK Positions Error: ${err.message}`);
@@ -162,20 +243,29 @@ export class AlpacaAdapter implements BrokerAdapter {
   }
 
   async placeBracketOrder(symbol: string, qty: number, takeProfitPrice: number, stopLossPrice: number) {
-    if (!this.hasCredentials()) return { id: 'sim-bracket' };
+    if (!this.hasCredentials()) {
+      if (!this.simulateIfMissingCredentials) throw new Error('Alpaca credentials are not configured');
+      return { id: 'sim-bracket' };
+    }
+    symbol = toAlpacaTradeSymbol(symbol);
+    if (!symbol || symbol.includes('/') || !Number.isInteger(qty) || qty <= 0 ||
+        !Number.isFinite(takeProfitPrice) || !Number.isFinite(stopLossPrice) ||
+        stopLossPrice <= 0 || takeProfitPrice <= stopLossPrice) {
+      throw new Error('Invalid Alpaca equity bracket order');
+    }
 
-    return await this.alpaca.createOrder({
+    return this.submitOrder({
       symbol,
       qty,
       side: 'buy',
       type: 'market',
-      time_in_force: 'gtc',
-      order_class: 'bracket',
-      take_profit: {
-        limit_price: takeProfitPrice,
+      timeInForce: 'gtc',
+      orderClass: 'bracket',
+      takeProfit: {
+        limitPrice: takeProfitPrice,
       },
-      stop_loss: {
-        stop_price: stopLossPrice,
+      stopLoss: {
+        stopPrice: stopLossPrice,
       },
     });
   }
@@ -186,8 +276,12 @@ export class AlpacaAdapter implements BrokerAdapter {
       return 0;
     }
     try {
-      const quote = await this.alpaca.getLatestQuote(symbol);
-      return Number(quote.AskPrice || quote.BidPrice || 0);
+      symbol = toAlpacaTradeSymbol(symbol);
+      const quote = symbol.includes('/')
+        ? (await this.alpaca.marketData.crypto.cryptoLatestQuotes({ loc: 'us', symbols: symbol })).quotes?.[symbol]
+        : (await this.alpaca.marketData.stocks.stockLatestQuoteSingle({ symbol })).quote;
+      const price = Number(quote?.ap || quote?.bp || 0);
+      return Number.isFinite(price) && price > 0 ? price : 0;
     } catch (err: any) {
       console.warn(`[ALPACA-SDK] Quote fetch failed for ${symbol}: ${err.message}`);
       return 0;
