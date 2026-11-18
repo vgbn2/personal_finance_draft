@@ -106,9 +106,9 @@
   },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^5.0.0",
-    "@mathieuc/tradingview": "^4.1.1",
+    "@mathieuc/tradingview": "^4.1.2",
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "@polymarket/clob-client-v2": "^1.2.0",
+    "@polymarket/clob-client-v2": "^1.2.1",
     "@types/node": "^26.6.6",
     "ethers": "^6.17.0",
     "ink": "^8.0.0",
@@ -119,7 +119,7 @@
     "socket.io": "^4.8.4",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
-    "viem": "^2.57.17",
+    "viem": "^2.57.20",
     "ws": "^8.22.2"
   },
   "overrides": {

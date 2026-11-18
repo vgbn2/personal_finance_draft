@@ -8,11 +8,11 @@
   },
   "dependencies": {
     "@alpacahq/alpaca-trade-api": "^5.0.0",
-    "@polymarket/clob-client-v2": "^1.2.0",
+    "@polymarket/clob-client-v2": "^1.2.1",
     "axios": "^1.21.1",
     "dotenv": "^18.0.10",
     "ethers": "^6.17.0",
-    "viem": "^2.57.17",
+    "viem": "^2.57.20",
     "ws": "^8.22.2"
   },
   "devDependencies": {
