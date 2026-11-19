@@ -29,6 +29,19 @@ const alpacaPositionsFixture = JSON.parse(fs.readFileSync(
   'utf8'
 ));
 
+test('default exit dispatcher loads the canonical trade command without placing an order', () => {
+  const cyclePath = require.resolve('../../../shared/lib/runtime/alpaca_bot_cycle');
+  const source = fs.readFileSync(cyclePath, 'utf8');
+  const match = source.match(/options\.commandTrade \|\| require\('([^']+)'\)\.commandTrade/);
+  assert.ok(match, 'default exit dispatcher must be covered');
+  const load = require('node:module').createRequire(cyclePath);
+  assert.equal(
+    load.resolve(match[1]),
+    require.resolve('../../../frontend/cli-tui/commands/trade/trade.js'),
+  );
+  assert.equal(typeof load(match[1]).commandTrade, 'function');
+});
+
 test('decideExit returns "target" when current price meets or exceeds the target', () => {
   assert.equal(decideExit(basePosition, 110, 1), 'target');
   assert.equal(decideExit(basePosition, 115, 1), 'target');
