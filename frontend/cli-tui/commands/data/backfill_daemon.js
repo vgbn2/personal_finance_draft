@@ -495,10 +495,10 @@ async function runBackfillCycle(o) {
 }
 
 // Run one DEEP_PLAN acquisition step for a symbol (per-symbol → bypasses the bulk gate).
-async function runDeepStep(job, step, deepDays) {
+async function runDeepStep(job, step, deepDays, failureDetails) {
   const sym = job.symbol;
   if (step.kind === 'crypto') {
-    return commandCryptoDeepBackfill(['--symbol', sym, '--days', String(deepDays), '--json']);
+    return commandCryptoDeepBackfill(['--symbol', sym, '--days', String(deepDays), '--json'], { failureDetails });
   }
   if (step.kind === 'equity') {
     return commandEquityDeepBackfill(['--symbol', sym, '--days', String(deepDays), '--json']);
@@ -532,8 +532,13 @@ function makeRealExecutor() {
       const errs = [];
       for (const step of steps) {
         try {
-          const rc = await runDeepStep(job, step, days);
-          if (rc === 0) okAny = true; else errs.push(`${step.tf}:exit ${rc}`);
+          const failureDetails = [];
+          const rc = await runDeepStep(job, step, days, failureDetails);
+          if (rc === 0) {
+            okAny = true;
+          } else {
+            errs.push(`${step.tf}:exit ${rc}${failureDetails.length ? `: ${failureDetails.join(' | ')}` : ''}`);
+          }
         } catch (e) {
           errs.push(`${step.tf}:${e && e.message ? e.message : String(e)}`);
         }
@@ -542,8 +547,9 @@ function makeRealExecutor() {
     }
     // incremental: finest-grain top-off only.
     let rc;
+    const failureDetails = [];
     if (job.family === 'crypto') {
-      rc = await commandCryptoDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
+      rc = await commandCryptoDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json'], { failureDetails });
     } else if (job.family === 'equities') {
       rc = await commandEquityDeepBackfill(['--symbol', job.symbol, '--days', String(days), '--json']);
     } else if (job.family === 'prediction_market') {
@@ -559,7 +565,10 @@ function makeRealExecutor() {
     } else {
       rc = await commandFiveMinAccumulate(['--family', job.family, '--symbol', job.symbol, '--days', String(days), '--json']);
     }
-    return { ok: rc === 0, error: rc === 0 ? undefined : `exit ${rc}` };
+    return {
+      ok: rc === 0,
+      error: rc === 0 ? undefined : `exit ${rc}${failureDetails.length ? `: ${failureDetails.join(' | ')}` : ''}`,
+    };
   };
 }
 

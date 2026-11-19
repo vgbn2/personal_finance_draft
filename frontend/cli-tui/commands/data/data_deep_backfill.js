@@ -325,7 +325,18 @@ function buildEquityDryRun(plan, options) {
  *
  * Example: sovereign data crypto-deep-backfill --days 1825 --delay-ms 200
  */
-async function commandCryptoDeepBackfill(args) {
+function retainCryptoFailure(details, message) {
+  if (!details || details.length >= 3) return;
+  const safe = String(message)
+    .replace(/https?:\/\/[^\s<>"']+/gi, '[redacted URL]')
+    .replace(/\bBearer\s+[^\s,;"']+/gi, 'Bearer [redacted]')
+    .replace(/["']?\bauthorization["']?\s*[:=]\s*[^\r\n]*/gi, '[redacted authorization]')
+    .replace(/["']?\b(?:api[_-]?key|token|password|secret)["']?\s*[:=]\s*(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;]+)/gi, '[redacted credential]')
+    .replace(/[\x00-\x1f\x7f-\x9f\u2028\u2029]/g, ' ');
+  details.push(Array.from(safe).slice(0, 256).join(''));
+}
+
+async function commandCryptoDeepBackfill(args, { failureDetails } = {}) {
   const { loadConfig, ingestMarketData } = require('../../../../backend/scripts/data_ops/ingest_market_data.js');
   const { printPayload } = require('../../lib/utils.js');
   const days = numericOption(args, '--days', 1825); // 5 years default
@@ -343,6 +354,7 @@ async function commandCryptoDeepBackfill(args) {
   const symbols = symbolArg ? cryptoSymbols.filter(s => s === symbolArg) : cryptoSymbols;
 
   if (symbols.length === 0) {
+    retainCryptoFailure(failureDetails, 'Requested crypto symbol is not configured');
     printPayload({ ok: false, error: symbolArg ? `Symbol ${symbolArg} not found in crypto universe` : 'No crypto symbols configured' }, args);
     return 1;
   }
@@ -350,6 +362,7 @@ async function commandCryptoDeepBackfill(args) {
   // historyDays <= 5 falls into the legacy daily-aggregation path in
   // fetchCryptoSnapshot and would synthesize fake 5m bars from 1d candles.
   if (days <= 5) {
+    retainCryptoFailure(failureDetails, 'crypto-deep-backfill requires --days > 5');
     printPayload({ ok: false, error: 'crypto-deep-backfill requires --days > 5 (native intraday fetch); use plain ingest for short windows' }, args);
     return 1;
   }
@@ -390,6 +403,9 @@ async function commandCryptoDeepBackfill(args) {
     const progress = `[${i + 1}/${symbols.length}]`;
     renderCryptoProgressStart(progress, symbol, runOptions);
     const result = await backfillCryptoSymbol(symbol, runOptions, ingestMarketData);
+    if (!result.entry.ok) {
+      retainCryptoFailure(failureDetails, result.entry.error || 'No crypto bars returned');
+    }
     symbolResults.push(result.entry);
     allErrors.push(...result.errors);
     if (result.entry.ok) results.ok += 1;
@@ -510,6 +526,7 @@ async function commandEquityDeepBackfill(args) {
 }
 
 module.exports = {
+  retainCryptoFailure,
   equityUniverseEntries, alpacaEquity5mSkipReason,
   buildEquityDeepBackfillPlan, estimateEquity5mApiCalls,
   commandCryptoDeepBackfill, commandEquityDeepBackfill,
