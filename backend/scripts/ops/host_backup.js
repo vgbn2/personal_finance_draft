@@ -100,6 +100,16 @@ function waitForInterval(milliseconds, signal) {
   });
 }
 
+function backupFailure(error, operation) {
+  return {
+    error_code: errorCode(error?.message) || 'backup_failed',
+    operation,
+    system_error_code: ['ENOENT', 'EACCES', 'EPERM', 'ENOSPC', 'EIO', 'EMFILE', 'ENFILE', 'EEXIST', 'ENOTDIR', 'EROFS'].includes(error?.code)
+      ? error.code
+      : null,
+  };
+}
+
 async function runBackupAttempt(options) {
   try {
     return await options.createBackup(options.backupOptions);
@@ -107,13 +117,15 @@ async function runBackupAttempt(options) {
     return {
       ok: false,
       backup_ok: false,
-      error_code: errorCode(error.message) || 'backup_failed',
-      staging_path: error.stagingPath || null,
+      ...backupFailure(error, 'create_host_backup'),
+      staging_path: null,
+      staging_retained: Boolean(error?.stagingPath),
     };
   }
 }
 
 async function runHostBackupLoop(options = {}) {
+  const intervalSecs = options.intervalSecs ?? 86400;
   const nowMs = options.nowMs || (() => Date.now());
   const wait = options.sleep || waitForInterval;
   const createBackup = options.createBackup || createHostBackup;
@@ -130,22 +142,22 @@ async function runHostBackupLoop(options = {}) {
     try {
       inspectRootDisk(options.rootPath || '/', options.rootDiskOptions);
     } catch (error) {
-      const errCode = errorCode(error.message) || 'storage_unavailable';
+      const failure = {
+        ok: false,
+        backup_ok: false,
+        ...backupFailure(error, 'check_root_disk'),
+      };
+      const errCode = failure.error_code;
       publishHeartbeat('host_backup', {
         state: 'degraded',
         attempted: false,
         error_code: errCode,
         next_run_at: null,
       });
-      output({
-        ok: false,
-        backup_ok: false,
-        error_code: errCode,
-        error: error.message,
-      });
+      output(failure);
       return {
         cycles: 0,
-        result: { ok: false, backup_ok: false, error_code: errCode },
+        result: failure,
         exitCode: 1,
       };
     }
@@ -158,7 +170,7 @@ async function runHostBackupLoop(options = {}) {
       const heartbeat = (options.readHeartbeat || readServiceHeartbeat)('host_backup', options.heartbeatOptions);
       dueAt = resolveInitialBackupDueAt({
         nowMs: scheduleNow,
-        intervalSecs: options.intervalSecs,
+        intervalSecs,
         heartbeat,
         completedBackupAt: null,
       });
@@ -171,20 +183,20 @@ async function runHostBackupLoop(options = {}) {
         );
         dueAt = resolveInitialBackupDueAt({
           nowMs: scheduleNow,
-          intervalSecs: options.intervalSecs,
+          intervalSecs,
           heartbeat,
           completedBackupAt,
         });
         break;
       } catch (error) {
-        const retryAt = scheduleNow + options.intervalSecs * 1000;
+        const retryAt = scheduleNow + intervalSecs * 1000;
         publishHeartbeat('host_backup', {
           state: 'degraded',
           attempted: false,
           error_code: errorCode(error.message),
           next_run_at: new Date(retryAt).toISOString(),
         });
-        const completedInterval = await wait(options.intervalSecs * 1000, options.signal);
+        const completedInterval = await wait(intervalSecs * 1000, options.signal);
         if (completedInterval === false || options.signal?.aborted) {
           publishHeartbeat('host_backup', { state: 'stopped', attempted: false, next_run_at: null });
           return { cycles, result: null, exitCode: 0 };
@@ -215,7 +227,7 @@ async function runHostBackupLoop(options = {}) {
     }
     cycles += 1;
     result = await runBackupAttempt({ createBackup, backupOptions: options.backupOptions });
-    const nextRunAt = new Date(nowMs() + options.intervalSecs * 1000).toISOString();
+    const nextRunAt = new Date(nowMs() + intervalSecs * 1000).toISOString();
     publishHeartbeat('host_backup', {
       state: result.ok ? 'healthy' : 'degraded',
       success: result.backup_ok === true,
@@ -224,7 +236,7 @@ async function runHostBackupLoop(options = {}) {
     });
     output(result);
     if (!options.watch || (maxCycles !== null && cycles >= maxCycles)) break;
-    const completedInterval = await wait(options.intervalSecs * 1000, options.signal);
+    const completedInterval = await wait(intervalSecs * 1000, options.signal);
     if (completedInterval === false || options.signal?.aborted) {
       publishHeartbeat('host_backup', { state: 'stopped', attempted: false, next_run_at: null });
       break;
@@ -276,8 +288,13 @@ if (require.main === module) {
   main().then((exitCode) => {
     process.exitCode = exitCode;
   }).catch((error) => {
-    try { writeServiceHeartbeat('host_backup', { state: 'degraded', error: error.message }); } catch (_) {}
-    process.stderr.write(`${JSON.stringify({ ok: false, error_code: errorCode(error.message) || 'backup_failed' })}\n`);
+    const failure = { ok: false, ...backupFailure(error, 'host_backup_cli') };
+    try {
+      writeServiceHeartbeat('host_backup', { state: 'degraded', error_code: failure.error_code });
+    } catch (heartbeatError) {
+      process.stderr.write(`${JSON.stringify({ ok: false, ...backupFailure(heartbeatError, 'write_backup_heartbeat') })}\n`);
+    }
+    process.stderr.write(`${JSON.stringify(failure)}\n`);
     process.exitCode = 1;
   });
 }
