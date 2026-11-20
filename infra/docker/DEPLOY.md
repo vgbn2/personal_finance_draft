@@ -304,3 +304,18 @@ docker start sv-searxng
 ```
 This restores the previous image, including its known stale-bytecode defect. Do not
 delete configuration/cache volumes. Rebuilding does not authorize a service rollout.
+
+#### CT114 configuration findings (read-only, 2026-11-21 session)
+- Installed `searx/engines/__init__.py:is_engine_active` (lines260–267) rejects
+  `onions` engines when `using_tor_proxy` is false. Both configured ahmia and
+  torch reproduce `load_engine(...) -> None` with that setting. These registration
+  errors are configuration exclusions, not evidence of the result lifecycle bug.
+  Enabling Tor or explicitly making these engines inactive is an operator choice;
+  neither was changed to silence logs.
+- Effective server settings report limiter=false/public_instance=false. Startup
+  nevertheless warns about missing limiter.toml and missing client-IP headers.
+  Do not inject trusted-IP headers or weaken protection merely to silence warnings.
+- Docker publishes container8080 on CT114 `0.0.0.0:8888` and `[::]:8888`.
+  A reported internal bind_address=127.0.0.1 is not proof of host-only exposure.
+  Firewall/reverse-proxy reachability and client-IP trust remain unqualified;
+  retain this boundary until an explicit private-network/proxy policy is approved.
