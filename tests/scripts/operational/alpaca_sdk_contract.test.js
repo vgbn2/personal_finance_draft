@@ -5,6 +5,8 @@ const http = require('node:http');
 const { once } = require('node:events');
 const { test } = require('node:test');
 const path = require('node:path');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
 const root = process.env.ALPACA_CONTRACT_ROOT || path.resolve(__dirname, '../../..');
 const { Alpaca, trading, marketData } = require(require.resolve('@alpacahq/alpaca-trade-api', { paths: [root] }));
 const { AlpacaAdapter } = require(path.join(root, 'backend/execution/dist/adapters/alpaca_adapter.js'));
@@ -232,6 +234,43 @@ test('SDK v5 to bot cycle: HTTP fill receipt controls P&L despite unrelated hold
   assert.deepEqual(state.positions, snapshot.positions);
   assert.deepEqual(state.cycleHistory, snapshot.cycleHistory);
   console.log('data-flow: local HTTP -> SDK OrderFromJSON -> validated receipt -> bot: 0.75 filled, 1.25 retained, P&L 9; replay/regression preserved');
+});
+
+test('gateway CLI: read-only order receipt crosses subprocess JSON boundary', async (t) => {
+  const f = await fixture(t);
+  f.state.submit = {
+    ...order,
+    side: 'sell',
+    qty: '2',
+    filled_qty: '0.75',
+    filled_avg_price: '112',
+    status: 'partially_filled',
+  };
+  const { stdout } = await promisify(execFile)(process.execPath, [
+    path.join(root, 'backend/execution/dist/index.js'),
+    'order',
+    order.id,
+    '--paper-provider',
+    '--json',
+  ], {
+    cwd: root,
+    timeout: 10000,
+    env: {
+      PATH: process.env.PATH,
+      SOVEREIGN_ENVIRONMENT_SURFACE: 'gateway_account',
+      ALPACA_PAPER_API_KEY: 'fixture-key',
+      ALPACA_PAPER_SECRET_KEY: 'fixture-secret',
+      ALPACA_PAPER_BASE_URL: f.baseUrl,
+    },
+  });
+  const payload = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf('}') + 1));
+  assert.equal(payload.ok, true);
+  assert.equal(payload.order.orderId, order.id);
+  assert.equal(payload.order.filledQty, 0.75);
+  assert.equal(payload.order.filledAvgPrice, 112);
+  assert.deepEqual(f.requests.map((request) => [request.method, request.url.pathname]), [
+    ['GET', '/v2/orders/order-fixture'],
+  ]);
 });
 
 test('SDK v5: malformed financial fields independently fail closed', async (t) => {
