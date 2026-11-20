@@ -14,6 +14,7 @@
     "docs/operational",
     "docs/reference",
     "docs/research",
+    "docs/runbooks",
     "docs/sections",
     "docs/tutorials"
   ],
@@ -2883,6 +2884,63 @@
         "safety-boundary",
         "installation",
         "documentation-map"
+      ]
+    },
+    {
+      "path": "docs/runbooks/README.md",
+      "type": "reference",
+      "audience": [
+        "operators",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "docs/runbooks"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "runbooks-index"
+      ]
+    },
+    {
+      "path": "docs/runbooks/alpaca-sdk-v5.md",
+      "type": "how_to",
+      "audience": [
+        "operators",
+        "maintainers"
+      ],
+      "owner": "execution",
+      "status": "canonical",
+      "source_paths": [
+        "backend/execution"
+      ],
+      "test_paths": [
+        "tests/scripts/lib/alpaca_bot_cycle.test.js"
+      ],
+      "review_triggers": [
+        "alpaca-sdk-migration"
+      ]
+    },
+    {
+      "path": "docs/runbooks/host-backup-diagnostics.md",
+      "type": "how_to",
+      "audience": [
+        "operators",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "shared/lib/runtime/host_maintenance.js"
+      ],
+      "test_paths": [
+        "tests/scripts/operational/host_maintenance.test.js"
+      ],
+      "review_triggers": [
+        "backup-diagnostics"
       ]
     }
   ],

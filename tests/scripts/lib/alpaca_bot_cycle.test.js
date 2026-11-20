@@ -238,6 +238,7 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
   process.env.ALPACA_PAPER_MAX_NOTIONAL = '5'; // $5 entry cap, AAPL is $100.91
 
   try {
+    // Phase 1: Order submission transitions positions to exit_pending without premature P&L realization
     const result = await runAlpacaExitCheck(['--paper-provider'], {
       stateStore,
       acquireLock: () => true,
@@ -255,15 +256,36 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
     assert.equal(tradeCalls[0][1], 'AAPL');
     assert.equal(tradeCalls[0][2], '10', 'sell quantity must be sum of all exiting rows');
 
-    // 2. No cap rejection errors
+    // 2. No cap rejection errors, order submitted
     assert.equal(result.errors.length, 0, 'exit sell must not be rejected by entry notional cap');
-    assert.equal(result.sellsExecuted, 10);
+    assert.equal(result.sellsSubmitted, 10, 'all 10 rows must transition to exit_pending');
+    assert.equal(result.sellsExecuted, 0, 'no fills executed before broker confirmation');
 
-    // 3. Deterministic state reduction
+    // 3. State retained as exit_pending pending fill confirmation
     assert.ok(savedState, 'state must be saved');
-    assert.equal(savedState.positions.length, 0, 'all 10 exiting positions must be cleared from open positions');
+    assert.equal(savedState.positions.length, 10, 'all 10 positions must be preserved as exit_pending');
+    assert.ok(savedState.positions.every((p) => p.exit_pending === true), 'every position marked exit_pending');
+    assert.equal(savedState.cycleHistory.length, 0, 'cycle history must not record premature P&L before fill confirmation');
 
-    // 4. Attribution preserved
+    // Phase 2: Broker confirms fill (shares no longer held at broker) -> realize P&L and clear open positions
+    stateStore.loadState = () => structuredClone(savedState);
+    const fillResult = await runAlpacaExitCheck(['--paper-provider'], {
+      stateStore,
+      acquireLock: () => true,
+      releaseLock: () => {},
+      fetchPositions: () => ({
+        status: 'confirmed_empty',
+        positions: [], // Broker confirms all shares sold
+      }),
+      commandTrade: mockCommandTrade,
+    });
+
+    // 4. Inhibit duplicate sell orders
+    assert.equal(tradeCalls.length, 1, 'duplicate sell must not be dispatched during fill reconciliation');
+    assert.equal(fillResult.sellsExecuted, 10, 'all 10 rows confirmed filled');
+    assert.equal(savedState.positions.length, 0, 'all 10 exiting positions must be cleared after fill confirmation');
+
+    // 5. Attribution preserved upon confirmed fill
     assert.equal(savedState.cycleHistory.length, 10, 'each strategy must receive individual exit attribution');
     const attributedStrategies = savedState.cycleHistory.map((h) => h.strategyName);
     for (let i = 1; i <= 10; i++) {

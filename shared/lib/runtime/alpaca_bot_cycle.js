@@ -232,8 +232,79 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     ]));
     const remaining = [];
     const exitingBySymbol = new Map();
+    const pendingBySymbol = new Map();
+
+    // Reconcile pending exits against broker positions (fill-confirmed accounting)
+    for (const position of state.positions) {
+      if (position.exit_pending) {
+        if (!pendingBySymbol.has(position.symbol)) {
+          pendingBySymbol.set(position.symbol, []);
+        }
+        pendingBySymbol.get(position.symbol).push(position);
+      }
+    }
+
+    for (const [symbol, pendingList] of pendingBySymbol.entries()) {
+      const brokerPos = brokerBySymbol.get(symbol);
+      const currentBrokerQty = brokerPos ? Math.max(0, Number(brokerPos.quantity || 0)) : 0;
+      const totalPendingQty = pendingList.reduce((sum, p) => sum + Number(p.qty || 0), 0);
+      let filledToAllocate = Math.max(0, totalPendingQty - currentBrokerQty);
+
+      for (const position of pendingList) {
+        const posQty = Number(position.qty || 0);
+        if (filledToAllocate >= posQty) {
+          // Confirmed full fill
+          filledToAllocate -= posQty;
+          const exitPrice = position.exitPrice || (brokerPos && Number(brokerPos.quantity) > 0
+            ? Number(brokerPos.marketValue) / Number(brokerPos.quantity)
+            : position.fillPrice);
+          const { historyEntry } = buildExitOutcome(
+            position,
+            position.exitReason || 'target',
+            exitPrice,
+            posQty,
+            result.cycleId,
+            executionEnabled
+          );
+          state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
+          result.sellsExecuted++;
+        } else if (filledToAllocate > 0) {
+          // Confirmed partial fill
+          const partialFilled = filledToAllocate;
+          filledToAllocate = 0;
+          const exitPrice = position.exitPrice || (brokerPos && Number(brokerPos.quantity) > 0
+            ? Number(brokerPos.marketValue) / Number(brokerPos.quantity)
+            : position.fillPrice);
+          const { historyEntry, remainingPosition } = buildExitOutcome(
+            position,
+            position.exitReason || 'target',
+            exitPrice,
+            partialFilled,
+            result.cycleId,
+            executionEnabled
+          );
+          state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
+          result.sellsExecuted++;
+          if (remainingPosition) {
+            remaining.push({
+              ...remainingPosition,
+              exit_pending: true,
+              exitPendingAt: position.exitPendingAt,
+              exitReason: position.exitReason,
+              exitPrice: position.exitPrice,
+            });
+          }
+        } else {
+          // Still pending broker fill
+          remaining.push(position);
+        }
+      }
+    }
 
     for (const position of state.positions) {
+      if (position.exit_pending) {
+        continue;
+      }
       const brokerPos = brokerBySymbol.get(position.symbol);
       if (!brokerPos) {
         // Closed manually outside the bot -- drop tracking, not an error.
@@ -309,6 +380,33 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             continue;
           }
           availableBySymbol.set(symbol, available - aggregateSellQty);
+
+          // Order accepted by broker: transition to exit_pending and retain in state until fill confirmed
+          let remainingToMark = aggregateSellQty;
+          for (const item of exitingItems) {
+            const itemQty = Number(item.position.qty || 0);
+            const allocatedQty = Math.min(itemQty, remainingToMark);
+            remainingToMark -= allocatedQty;
+
+            if (allocatedQty > 0) {
+              remaining.push({
+                ...item.position,
+                qty: allocatedQty,
+                exit_pending: true,
+                exitPendingAt: new Date().toISOString(),
+                exitReason: item.exitReason,
+                exitPrice: item.currentPrice,
+              });
+              result.sellsSubmitted = (result.sellsSubmitted || 0) + 1;
+            }
+            if (itemQty > allocatedQty) {
+              remaining.push({
+                ...item.position,
+                qty: itemQty - allocatedQty,
+              });
+            }
+          }
+          continue;
         } catch (err) {
           result.errors.push(`Exit sell failed for ${symbol}: ${err.message}`);
           for (const item of exitingItems) remaining.push(item.position);
@@ -316,6 +414,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         }
       }
 
+      // Dry-run mode: immediate simulated fill outcome
       let remainingSold = aggregateSellQty;
       for (const item of exitingItems) {
         const itemQty = Number(item.position.qty || 0);
@@ -329,7 +428,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             item.currentPrice,
             allocatedQty,
             result.cycleId,
-            executionEnabled
+            false
           );
           state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
           if (remainingPosition) remaining.push(remainingPosition);
