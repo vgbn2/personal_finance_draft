@@ -271,6 +271,31 @@ test('gateway CLI: read-only order receipt crosses subprocess JSON boundary', as
   assert.deepEqual(f.requests.map((request) => [request.method, request.url.pathname]), [
     ['GET', '/v2/orders/order-fixture'],
   ]);
+
+  const commandPath = path.join(root, 'frontend/cli-tui/commands/trade/trade.js');
+  const script = `
+    const { commandTrade } = require(${JSON.stringify(commandPath)});
+    commandTrade(['order', 'order-fixture', '--paper-provider'], { receipt: true })
+      .then((receipt) => console.log(JSON.stringify(receipt)))
+      .catch((error) => { console.error(error); process.exitCode = 1; });
+  `;
+  const nested = await promisify(execFile)(process.execPath, ['-e', script], {
+    cwd: root,
+    timeout: 10000,
+    env: {
+      PATH: process.env.PATH,
+      SOVEREIGN_SKIP_DOTENV: '1',
+      SOVEREIGN_SKIP_LOCAL_ENV: '1',
+      ALPACA_PAPER_API_KEY: 'fixture-key',
+      ALPACA_PAPER_SECRET_KEY: 'fixture-secret',
+      ALPACA_PAPER_BASE_URL: f.baseUrl,
+    },
+  });
+  const returned = JSON.parse(nested.stdout.trim());
+  assert.equal(returned.ok, true);
+  assert.equal(returned.exit_code, 0);
+  assert.deepEqual(returned.order, payload.order);
+  assert.ok(f.requests.every((request) => request.method === 'GET'));
 });
 
 test('SDK v5: malformed financial fields independently fail closed', async (t) => {

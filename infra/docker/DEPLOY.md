@@ -278,6 +278,21 @@ Expected: all five gates PASS. An import assertion catches inherited stale bytec
 Injected paging errors deliberately produce a traceback while preserving the original
 callback error; a zero exit status proves the assertions, not provider availability.
 
+The retained extended harness covers typed-result parity, processor races,
+installed-app callbacks, partial metrics, and telemetry exceptions:
+```bash
+docker run --rm -i --network none --read-only --tmpfs /tmp:rw,size=32m \
+  --entrypoint /usr/local/searxng/.venv/bin/python \
+  sovereign-searxng:lifecycle -B - --candidate --deployed --isolated-callbacks \
+  --incremental --partial-metric --metric-safety --contention \
+  < infra/docker/searxng/extended_check.py
+# --deployed forbids historical exec-patching; test the image's imported code.
+```
+Startup loads actual engine metadata but substitutes provider initialization.
+ClearURL/plugin startup may attempt downloads; `--network none` prevents external
+traffic. Expected DNS errors do not mean zero attempted requests. This fixture is
+not a provider-availability test or a prolonged service soak.
+
 #### 4. Rollback (CT114 deployment only)
 The pre-correction container is retained stopped as `sv-searxng-before-bytecode`.
 Only use these commands if rolling back the current service is necessary:
