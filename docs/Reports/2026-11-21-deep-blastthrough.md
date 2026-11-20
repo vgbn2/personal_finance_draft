@@ -146,7 +146,8 @@ probe exit0/zero strikes; this does not mean all tests pass (ENV-01 still fails)
 
 ## Remaining qualification
 
-Infrastructure/log and taxonomy evidence still pending at this checkpoint.
+Infrastructure/log evidence received after initial checkpoint; taxonomy evidence
+is still pending. See appended runtime qualification below.
 No all-complete, all-clean, production-ready, numeric
 DCS, prolonged-soak, or full-source-coverage claim is made.
 
@@ -195,3 +196,73 @@ contract mismatch without claiming to execute the gateway or provider.
 
 No production mutation. Only the unique printed tmpfs directory is created; retain
 it for inspection or remove that specific directory after verifying its contents.
+
+## Infrastructure/log continuation — observed2026-11-20T17:47Z
+
+GPT-5.6 Luna completed read-only CT114 diagnosis; main independently confirmed
+Compose fallback/suppression presence using boolean-only output, not secret values.
+
+### INFRA-01 — HIGH: literal router credential fallback
+
+- `infra/docker/docker-compose.yml:472`: nonempty literal default for
+  SOVEREIGN_ROUTER_KEY. Missing operator input resolves to a credential-shaped
+  value instead of failing closed. Like a lock shipping with a spare key already
+  inserted, successful access does not prove the operator supplied the right key.
+- Worker Compose render with variable unset exited0 and included the key;
+  no provider-authentication acceptance of that value was tested. Current router
+  success cannot distinguish fallback use from supplied configuration.
+- Failing boundary: Compose resolution to quant environment. Fault: our_source;
+  owner: quant Compose credential projection; stub:none; confidence high for
+  embedded fallback, unverified validity/current use. Do not publish the literal.
+- Acceptance: no tracked credential literal; absent input fails quant configuration
+  or startup; explicitly supplied input works; regression without reading secrets.
+  Assess rotation/revocation if the literal is a valid credential; no rotation or
+  production configuration changes authorized by this audit.
+- Tracking: https://github.com/vgbn2/personal_finance_draft/issues/111.
+- Generic secret scan reported944 files/zero violations despite this finding:
+  that scanner pass does not establish absence of credentials.
+
+### INFRA-02 — quant exit suppression, source hazard not reproduced outage
+
+`infra/docker/docker-compose.yml:510` uses `|| true` after the harness invocation.
+This masks child exit status within the long-lived loop. Fault:our_source;
+owner:quant wrapper; stub:silent_fallback. No failing harness was injected and no
+current crash established; restart/alert implications require an isolated failing
+fixture and an explicit policy for transient errors versus valid candidate rejection.
+Do not silently turn a deliberate retry loop into a crash/restart loop.
+
+### INFRA-03 — optional-provider status ambiguity, not confirmed outage
+
+Logs retain missing MT5 quote-file ENOENT while overall Yahoo backfill succeeds.
+USDJPY1916/USDSEK1906 bars were returned. Source:
+data_accumulate.js:209–213,249–266 and ingest_market_data/index.js:522–545.
+Mandatory-versus-optional feed contract is unresolved; do not label this a broken
+success flag until that contract is established. Candidate owner:data aggregation
+and deployment feed configuration; fault unresolved, not proved shared/mixed;
+no production stub established.
+
+### Bounded runtime and verification evidence
+
+- Corrected SSH/pct probe exit0: six requested containers running, restart_count0,
+  OOMKilled=false. Initial host-level docker invocation exit127 was a probe-path
+  error, not service failure. Snapshot and30-minute logs do not establish a soak.
+- Alpaca cycles94–97 completed; no current exit error. Backfill cycle49 completed,
+  errors0/rollup_errors0. Health reports fresh canonical data/free disk71.8%, not
+  memory health. Quant rejects below-floor candidates as expected.
+- SearXNG and backup had no window log output: neither proves successful queries
+  or completed backup. No heavy-overlap/backup or historical peak qualification.
+- Docker stats: bot107MiB, backfill803.1MiB, backup30.5MiB, health19.85MiB,
+  quant21.27MiB, SearXNG130.1MiB. These are container snapshots, not process heap.
+- Local Compose/shell/selected JS syntax exit0; deployment/heartbeat/backfill tests
+ 13/13 exit0. Overall infrastructure complexityB/86 includes individual F-rated
+  doctor scripts and D-rated extended harness; not proof of runtime defects.
+- Evidence under `/tmp/opencode/audit-infra-*`, especially corrected CT114 log,
+  state-stats and local-tests logs. No environment values or secret files inspected
+  remotely; no restarts/orders/deployment/resource changes.
+- Revised scorecard: Docker C (INFRA-01); systemd B (syntax/targeted checks only);
+  operational tooling not fully qualified (complexity debt,13 selected tests);
+  CT114 bounded snapshot passes, prolonged runtime qualification BLOCKED.
+
+Next action: retain credential finding in tracker, decide credential handling and
+quant/feed contracts before fixes. #96 firewall/client-IP/limiter policy and #105
+memory/overlap acceptance remain open; this snapshot does not clear either.
