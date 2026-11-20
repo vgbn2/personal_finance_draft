@@ -37,7 +37,7 @@ function classifyGatewayEnvironmentSurface(args = []) {
   const command = String(normalized[0] || '').toLowerCase();
   if (!command) throw environmentClassificationError(command);
   if (command === '--help' || command === '-h' || normalized.includes('--demo')) return 'gateway_public';
-  if (command === 'aggregate_portfolio' || command === 'positions') return 'gateway_account';
+  if (command === 'aggregate_portfolio' || command === 'positions' || command === 'order') return 'gateway_account';
   if (command === 'balance') return normalized.includes('--live') ? 'gateway_account' : 'gateway_public';
   if (command === 'buy' || command === 'sell' || command === 'bot' || command === 'process') return 'execution';
   if (command !== 'polymarket') throw environmentClassificationError(command);

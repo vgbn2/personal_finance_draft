@@ -1,11 +1,30 @@
 # Module: Alpaca Asymmetric Exit Cap & Multi-Position Deduplication
 
-> **Status:** Implemented & Verified (ALPACA-EXIT-01)  
+> **Status:** Order-receipt correction under local verification; not deployed (#109)
 > **Audience:** Algorithmic Developers, Execution Engineers, Risk Officers  
 > **Canonical owners:** `shared/lib/runtime/alpaca_bot_cycle.js`, `backend/execution/src/index.ts`  
 > **Review triggers:** Broker order sizing, notional limits, sub-position attribution, sell deduplication  
 
 ## Purpose And Non-Goals
+
+### Order-specific accounting correction
+
+`runAlpacaExitCheck` now requests a structured receipt through the existing CLI
+authorization gates and retains its order ID. A read-only gateway `order <id>`
+query uses the SDK's `getOrderByOrderID`, validates the identity and fill bounds,
+and returns cumulative filled quantity and average execution price. Inventory
+decreases alone do not establish a fill.
+
+Each pending group retains the previously accounted cumulative quantity and
+notional. New proceeds are the difference between successive cumulative notionals;
+repeated receipts therefore cannot realize P&L twice. Partial allocations retain
+the existing ordered strategy attribution. Like a receipt book, a missing shelf
+item is not evidence of a sale: only the numbered receipt establishes proceeds.
+
+Legacy pending exits without IDs, failed lookups, and ambiguous submission responses
+remain tracked and require reconciliation; they are never automatically assigned
+fills or retried. Terminal canceled/expired/rejected orders retain unsold quantity
+for a later cycle. No production migration or live order is implied by local tests.
 
 This module provides deterministic, attribution-preserving order execution and asymmetric risk limit enforcement for the Alpaca Paper Bot trading cycle. It specifically resolves the `ALPACA-EXIT-01` operational failure where exposure-limiting entry caps blocked risk-reducing exits, and multiple virtual sub-positions on the same symbol generated redundant broker orders and multiplied warning storms.
 

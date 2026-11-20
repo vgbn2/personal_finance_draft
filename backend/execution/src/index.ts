@@ -444,6 +444,7 @@ Commands:
   sell <symbol> <qty> [type] [price]   Place a sell order
   balance                              Show account balance
   positions                            Show account positions
+  order <id>                           Read one Alpaca order and confirmed fill details
   aggregate_portfolio                  Aggregate balances across all brokers
   polymarket portfolio                 Show pUSD, open orders, and filled positions
   polymarket debug                     Show signer/funder, balance, allowance, and account diagnostics
@@ -602,7 +603,7 @@ export async function main() {
     ? new DeribitAdapter({ testnet: !isLive, simulateIfMissingCredentials: !isLive })
     : (broker === 'polymarket')
     ? new PolymarketAdapter({ simulateIfMissingCredentials: !isLive })
-    : isLive
+    : (isLive || (command === 'order' && wantsLive))
     ? new AlpacaAdapter({ paper: false, simulateIfMissingCredentials: false })
     : providerPaper
     ? new AlpacaAdapter({ paper: true, simulateIfMissingCredentials: false })
@@ -753,6 +754,16 @@ export async function main() {
     } catch (err: any) {
       if (useJson) console.log(JSON.stringify({ ok: false, error: err.message }));
       else console.error(`[GATEWAY] Balance error: ${err.message}`);
+      process.exitCode = 1;
+    }
+  } else if (command === 'order') {
+    try {
+      const accountAdapter: BrokerAdapter = adapter;
+      if (!accountAdapter.getOrder) throw new Error('Order lookup is unavailable for this broker');
+      const order = await accountAdapter.getOrder(String(args[1] || ''));
+      console.log(JSON.stringify({ ok: true, order }));
+    } catch (err: any) {
+      console.log(JSON.stringify({ ok: false, error: err.message }));
       process.exitCode = 1;
     }
   } else if (command === 'positions') {

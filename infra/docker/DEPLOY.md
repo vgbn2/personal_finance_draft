@@ -247,3 +247,45 @@ Generate API tokens with: `openssl rand -hex 32`
 | `./storage` | `/app/storage` | Binary TS indices, paper ledger, quarantine logs |
 | `./workspace` | `/app/workspace` | Prompt logs, session state |
 | `${HOST_BACKUP_EXTERNAL_DIR:-/data/backups}` | `/data/backups` | Backup staging mount |
+
+### SearXNG lifecycle patch (#96)
+
+The pinned upstream image contains precompiled Python files. Replacing source alone
+can leave Python importing the old implementation; the build removes the two affected
+cache files. Plugin callbacks run outside the publication lock, while closure and
+publication share that lock. Like a checkout desk, closing the till must not wait for
+a customer still filling out a form; their late form must not reopen the till.
+
+#### 1. Inspection (read-only)
+```bash
+docker image inspect sovereign-searxng:lifecycle # inspect the locally built candidate
+```
+
+#### 2. Build (no service changes)
+```bash
+docker build -t sovereign-searxng:lifecycle infra/docker/searxng # pinned upstream digest
+```
+
+#### 3. Verification (offline)
+```bash
+docker run --rm -i --network none --read-only --tmpfs /tmp:rw,size=32m \
+  --entrypoint /usr/local/searxng/.venv/bin/python \
+  sovereign-searxng:lifecycle -B - < infra/docker/searxng/check.py
+# --network none blocks provider traffic; tmpfs permits disposable SearXNG caches.
+# -B prevents bytecode writes; the test deliberately uses normal bytecode imports.
+```
+Expected: all five gates PASS. An import assertion catches inherited stale bytecode.
+Injected paging errors deliberately produce a traceback while preserving the original
+callback error; a zero exit status proves the assertions, not provider availability.
+
+#### 4. Rollback (CT114 deployment only)
+The pre-correction container is retained stopped as `sv-searxng-before-bytecode`.
+Only use these commands if rolling back the current service is necessary:
+```bash
+docker stop sv-searxng
+docker rename sv-searxng sv-searxng-bytecode-failed
+docker rename sv-searxng-before-bytecode sv-searxng
+docker start sv-searxng
+```
+This restores the previous image, including its known stale-bytecode defect. Do not
+delete configuration/cache volumes. Rebuilding does not authorize a service rollout.

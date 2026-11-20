@@ -8,7 +8,11 @@ const { pickAssets } = require('../../tui/asset_picker.js');
 const { canLiveExecute, getRuntimeMode } = require('../../../../shared/lib/brokers/capabilities.js');
 const { featureGate } = require('../../../../shared/lib/settings/runtime.js');
 const { loadSettings } = require('../../../../shared/lib/settings/user_settings.js');
-const { runGatewayCommand, buildTradeGatewayLaunch } = require('../../../../shared/lib/runtime/backend_bridge.js');
+const {
+  runGatewayCommand,
+  buildTradeGatewayLaunch,
+  executeSovereignCommand,
+} = require('../../../../shared/lib/runtime/backend_bridge.js');
 const {
   pageText,
   promptSelect,
@@ -247,7 +251,7 @@ function buildTradeArgsFromActionFlag(args) {
 /**
  * Handles the 'trade' command.
  */
-async function commandTrade(args) {
+async function commandTrade(args, options = {}) {
   args = buildTradeArgsFromActionFlag(args);
   const subcommand = args[0];
 
@@ -409,6 +413,13 @@ async function commandTrade(args) {
     env: hasFlag(args, '--live') ? { SOVEREIGN_EXECUTION_AUTHORIZED: 'true' } : {},
   });
   const execPath = String(launch.command || process.execPath).trim();
+  if (options.receipt === true) {
+    return executeSovereignCommand(execPath, [...launch.args, '--json'], {
+      env: launch.env,
+      replaceEnv: true,
+      shell: false,
+    });
+  }
   const result = spawnSync(execPath, launch.args, {
     cwd: utils.REPO_ROOT,
     stdio: 'inherit',

@@ -60,7 +60,8 @@ async function fixture(t) {
     else if (url.pathname === '/v2/orders') {
       status = state.historyStatus;
       payload = state.orders;
-    } else if (url.pathname.startsWith('/v2/orders/')) status = state.cancelStatus;
+    } else if (url.pathname.startsWith('/v2/orders/') && req.method === 'GET') payload = state.submit;
+    else if (url.pathname.startsWith('/v2/orders/')) status = state.cancelStatus;
     else if (url.pathname === '/v2/stocks/AAPL/quotes/latest') payload = { symbol: 'AAPL', quote: state.quote };
     else if (url.pathname === '/v1beta3/crypto/us/latest/quotes') payload = { quotes: { 'BTC/USD': state.quote } };
     else status = 404;
@@ -140,6 +141,97 @@ test('SDK v5: complete legacy injection seam uses real local HTTP transport', as
   const partial = new AlpacaAdapter({ client: { getAccount: client.getAccount } });
   assert.equal((await partial.getPortfolioBalance()).EQUITY, 300);
   await assert.rejects(partial.cancelOrder('missing'), /cancelOrder/);
+});
+
+test('SDK v5: order lookup preserves confirmed fills and rejects malformed receipts', async (t) => {
+  const f = await fixture(t);
+  f.state.submit = {
+    ...order,
+    side: 'sell',
+    qty: '2',
+    filled_qty: '0.75',
+    filled_avg_price: '112.5',
+    status: 'partially_filled',
+  };
+  assert.deepEqual(await f.adapter.getOrder('order-fixture'), {
+    orderId: 'order-fixture',
+    symbol: 'BTC/USD',
+    side: 'sell',
+    status: 'partially_filled',
+    quantity: 2,
+    filledQty: 0.75,
+    filledAvgPrice: 112.5,
+  });
+  assert.equal(f.requests.at(-1).url.pathname, '/v2/orders/order-fixture');
+  for (const malformed of [
+    { id: 'different-order' },
+    { side: 'unknown' },
+    { qty: 'bad' },
+    { filled_qty: '-1' },
+    { filled_qty: '3' },
+    { filled_avg_price: null },
+    { filled_avg_price: '0' },
+  ]) {
+    const valid = { ...f.state.submit };
+    f.state.submit = { ...valid, ...malformed };
+    await assert.rejects(f.adapter.getOrder('order-fixture'), /Malformed Alpaca/);
+    f.state.submit = valid;
+  }
+  f.state.submit = { ...f.state.submit, filled_qty: '0', filled_avg_price: null };
+  assert.equal((await f.adapter.getOrder('order-fixture')).filledAvgPrice, null);
+  f.state.status = 403;
+  await assert.rejects(f.adapter.getOrder('order-fixture'));
+});
+
+test('SDK v5 to bot cycle: HTTP fill receipt controls P&L despite unrelated holdings', async (t) => {
+  const f = await fixture(t);
+  const { runAlpacaExitCheck } = require(path.join(root, 'shared/lib/runtime/alpaca_bot_cycle.js'));
+  let state = {
+    positions: [{
+      symbol: 'BTC/USD',
+      qty: 2,
+      fillPrice: 100,
+      exit_pending: true,
+      exitOrderId: order.id,
+      exitFilledQty: 0,
+      exitFilledNotional: 0,
+    }],
+    cycleHistory: [],
+  };
+  f.state.submit = {
+    ...order,
+    side: 'sell',
+    qty: '2',
+    filled_qty: '0.75',
+    filled_avg_price: '112',
+    status: 'partially_filled',
+  };
+  const options = {
+    stateStore: {
+      LOCK_PATH: '/tmp/alpaca-sdk-cycle.lock',
+      loadState: () => structuredClone(state),
+      saveState: (next) => { state = structuredClone(next); },
+    },
+    acquireLock: () => true,
+    releaseLock: () => {},
+    fetchPositions: () => ({ status: 'confirmed_empty', positions: [] }),
+    fetchOrder: async (id) => ({ ok: true, order: await f.adapter.getOrder(id) }),
+    commandTrade: async () => { throw new Error('duplicate sell'); },
+  };
+  const first = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.deepEqual(first.errors, []);
+  assert.equal(state.positions[0].qty, 1.25);
+  assert.equal(state.cycleHistory[0].soldQty, 0.75);
+  assert.equal(state.cycleHistory[0].realizedPnl, 9);
+  const replay = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.equal(replay.sellsExecuted, 0);
+  f.state.submit.filled_qty = '0.5';
+  const snapshot = structuredClone(state);
+  const regressed = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.match(regressed.errors[0], /regressed order fill receipt/);
+  assert.deepEqual(state.positions, snapshot.positions);
+  assert.deepEqual(state.cycleHistory, snapshot.cycleHistory);
+  console.log('data-flow: local HTTP -> SDK OrderFromJSON -> validated receipt -> bot: 0.75 filled, 1.25 retained, P&L 9; replay/regression preserved');
 });
 
 test('SDK v5: malformed financial fields independently fail closed', async (t) => {

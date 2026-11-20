@@ -69,6 +69,15 @@ export interface BrokerAdapter {
   getPortfolioBalance(): Promise<Record<string, number>>;
   getPositions(): Promise<Position[]>;
   getQuote?(symbol: string): Promise<number>;
+  getOrder?(orderId: string): Promise<{
+    orderId: string;
+    symbol: string;
+    side: string;
+    status: string;
+    quantity: number;
+    filledQty: number;
+    filledAvgPrice: number | null;
+  }>;
 }
 
 export interface Mt5RegistrationMessage {
@@ -132,4 +141,3 @@ export interface Mt5PositionModifyResultMessage {
   tp?: number;
   error?: string;
 }
-

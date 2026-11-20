@@ -231,7 +231,7 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
   const tradeCalls = [];
   const mockCommandTrade = async (args) => {
     tradeCalls.push(args);
-    return 0; // exit success
+    return { ok: true, order: { orderId: 'exit-fixture' } };
   };
 
   const prevEnv = process.env.ALPACA_PAPER_MAX_NOTIONAL;
@@ -267,7 +267,7 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
     assert.ok(savedState.positions.every((p) => p.exit_pending === true), 'every position marked exit_pending');
     assert.equal(savedState.cycleHistory.length, 0, 'cycle history must not record premature P&L before fill confirmation');
 
-    // Phase 2: Broker confirms fill (shares no longer held at broker) -> realize P&L and clear open positions
+    // Order-specific receipt, not missing inventory, confirms the execution price.
     stateStore.loadState = () => structuredClone(savedState);
     const fillResult = await runAlpacaExitCheck(['--paper-provider'], {
       stateStore,
@@ -278,6 +278,17 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
         positions: [], // Broker confirms all shares sold
       }),
       commandTrade: mockCommandTrade,
+      fetchOrder: () => ({
+        ok: true,
+        order: {
+          orderId: 'exit-fixture',
+          symbol: 'AAPL',
+          side: 'sell',
+          status: 'filled',
+          filledQty: 10,
+          filledAvgPrice: 110,
+        },
+      }),
     });
 
     // 4. Inhibit duplicate sell orders
@@ -287,6 +298,7 @@ test('composite: 10 attributed AAPL rows, 1 broker position, 1 exit command, det
 
     // 5. Attribution preserved upon confirmed fill
     assert.equal(savedState.cycleHistory.length, 10, 'each strategy must receive individual exit attribution');
+    assert.ok(savedState.cycleHistory.every((entry) => entry.exitPrice === 110 && entry.realizedPnl === 10));
     const attributedStrategies = savedState.cycleHistory.map((h) => h.strategyName);
     for (let i = 1; i <= 10; i++) {
       assert.ok(attributedStrategies.includes(`strat_${i}`), `missing attribution for strat_${i}`);
@@ -357,4 +369,84 @@ test('recorded pending exit skips duplicate sell and preserves file-backed track
     fs.rmSync(statePath, { force: true });
     fs.rmSync(lockPath, { force: true });
   }
+});
+
+test('order receipts: partial fills, replay, cancellation and missing legacy IDs preserve accounting', async () => {
+  let state = {
+    positions: [{
+      symbol: 'AAPL',
+      qty: 2,
+      fillPrice: 100,
+      exit_pending: true,
+      exitOrderId: 'exit-partial',
+      exitFilledQty: 0,
+      exitFilledNotional: 0,
+      exitReason: 'target',
+    }],
+    cycleHistory: [],
+  };
+  let order = {
+    orderId: 'exit-partial',
+    symbol: 'AAPL',
+    side: 'sell',
+    status: 'partially_filled',
+    filledQty: 0.5,
+    filledAvgPrice: 110,
+  };
+  const options = {
+    stateStore: {
+      LOCK_PATH: '/tmp/alpaca-order-receipt.lock',
+      loadState: () => structuredClone(state),
+      saveState: (next) => { state = structuredClone(next); },
+    },
+    acquireLock: () => true,
+    releaseLock: () => {},
+    // Manual/nonpending holdings must not influence this order's fill attribution.
+    fetchPositions: () => ({
+      status: 'confirmed',
+      positions: [{ symbol: 'AAPL', quantity: 50, marketValue: 5500 }],
+    }),
+    fetchOrder: () => ({ ok: true, order }),
+    commandTrade: async () => { throw new Error('duplicate sell dispatched'); },
+  };
+  let result = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.deepEqual(result.errors, []);
+  assert.equal(state.positions[0].qty, 1.5);
+  assert.equal(state.cycleHistory[0].realizedPnl, 5);
+  result = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.equal(result.sellsExecuted, 0, 'receipt replay must not double-account');
+  assert.equal(state.cycleHistory.length, 1);
+  order = { ...order, status: 'canceled', filledQty: 1, filledAvgPrice: 115 };
+  result = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.equal(result.errors.length, 0);
+  assert.equal(state.positions[0].qty, 1);
+  assert.equal(state.positions[0].exit_pending, false);
+  assert.equal(state.cycleHistory[0].exitPrice, 120, 'incremental fill price comes from cumulative notional delta');
+  assert.equal(state.cycleHistory[0].realizedPnl, 10);
+
+  state.positions[0].exit_pending = true;
+  state.positions[0].exitOrderId = null;
+  options.fetchPositions = () => ({ status: 'confirmed_empty', positions: [] });
+  const before = structuredClone(state);
+  result = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.equal(result.sellsExecuted, 0);
+  assert.deepEqual(state.positions, before.positions);
+  assert.deepEqual(state.cycleHistory, before.cycleHistory);
+  assert.match(result.errors[0], /legacy pending exit needs order reconciliation/);
+
+  state.positions.push({
+    symbol: 'AAPL',
+    qty: 1,
+    fillPrice: 100,
+    targetPrice: 105,
+    entryTimestamp: new Date().toISOString(),
+  });
+  options.fetchPositions = () => ({
+    status: 'confirmed',
+    positions: [{ symbol: 'AAPL', quantity: 50, marketValue: 5500 }],
+  });
+  result = await runAlpacaExitCheck(['--paper-provider'], options);
+  assert.equal(result.sellsSubmitted || 0, 0);
+  assert.equal(state.positions.length, 2);
+  assert.ok(result.errors.some((error) => /skipping duplicate exit/.test(error)));
 });

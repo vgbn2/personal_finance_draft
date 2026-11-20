@@ -36,6 +36,7 @@ test('gateway command classifier covers every gateway command branch and fails c
     [['balance', '--json'], 'gateway_public'],
     [['balance', '--live', '--json'], 'gateway_account'],
     [['positions', '--json'], 'gateway_account'],
+    [['order', 'receipt-id', '--paper-provider', '--json'], 'gateway_account'],
     [['aggregate_portfolio', '--json'], 'gateway_account'],
     [['buy', 'AAPL', '1'], 'execution'],
     [['sell', 'AAPL', '1'], 'execution'],

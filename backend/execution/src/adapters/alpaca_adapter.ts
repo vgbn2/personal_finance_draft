@@ -49,6 +49,9 @@ export class AlpacaAdapter implements BrokerAdapter {
               ),
               getAllOrders: async (query: trading.GetAllOrdersRequest) => (await legacy.getOrders(query)).map(trading.OrderFromJSON),
               deleteOrderByOrderID: ({ orderId }: trading.DeleteOrderByOrderIDRequest) => legacy.cancelOrder(orderId),
+              getOrderByOrderID: async ({ orderId }: trading.GetOrderByOrderIDRequest) => trading.OrderFromJSON(
+                await legacy.getOrder(orderId),
+              ),
             },
           },
           marketData: {
@@ -159,6 +162,35 @@ export class AlpacaAdapter implements BrokerAdapter {
     }
     await this.alpaca.trading.orders.deleteOrderByOrderID({ orderId });
     return true;
+  }
+
+  async getOrder(orderId: string) {
+    if (!orderId || !this.hasCredentials()) {
+      throw new Error('Alpaca order lookup requires an order ID and credentials');
+    }
+    const order = await this.alpaca.trading.orders.getOrderByOrderID({ orderId });
+    if (order?.id !== orderId || !order.symbol || !order.status ||
+        !['buy', 'sell'].includes(order.side)) {
+      throw new Error('Malformed Alpaca order identity');
+    }
+    const quantity = this.finiteNumber(order.qty, 'order quantity');
+    const filledQty = this.finiteNumber(order.filledQty, 'order filled quantity');
+    const filledAvgPrice = filledQty > 0
+      ? this.finiteNumber(order.filledAvgPrice, 'order fill price')
+      : null;
+    if (quantity <= 0 || filledQty < 0 || filledQty > quantity ||
+        (filledAvgPrice !== null && filledAvgPrice <= 0)) {
+      throw new Error('Malformed Alpaca order fill bounds');
+    }
+    return {
+      orderId: order.id,
+      symbol: order.symbol,
+      side: order.side,
+      status: order.status,
+      quantity,
+      filledQty,
+      filledAvgPrice,
+    };
   }
 
   async getPortfolioBalance(): Promise<Record<string, number>> {

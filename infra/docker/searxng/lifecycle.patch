@@ -1,0 +1,231 @@
+--- a/searx/results.py
++++ b/searx/results.py
+@@ -79,20 +79,70 @@
+         self._lock: RLock = RLock()
+         self._main_results_sorted: list[MainResult | LegacyResult] = None  # type: ignore
+ 
+-    def extend(
+-        self, engine_name: str | None, results: list[Result | LegacyResult]
++    def extend(self, engine_name, results):
++        with self._lock:
++            if self._closed:
++                return
++        main_count = 0
++        functional_error = None
++        try:
++            for result in list(results):
++                with self._lock:
++                    if self._closed:
++                        return
++                if isinstance(result, Result):
++                    result.engine = result.engine or engine_name
++                else:
++                    result["engine"] = result.get("engine") or engine_name or ""
++                    result = LegacyResult(result)
++                result.normalize_result_fields()
++                if not self.on_result(result):
++                    continue
++                with self._lock:
++                    if self._closed:
++                        return
++                    main_count = self._publish_results(engine_name, [result], main_count)
++        except BaseException as error:
++            functional_error = error
++            raise
++        finally:
++            if engine_name in searx.engines.engines:
++                eng = searx.engines.engines[engine_name]
++                try:
++                    histogram_observe(main_count, "engine", eng.name, "result", "count")
++                except Exception as telemetry_error:
++                    if functional_error is None:
++                        raise
++                    functional_error.add_note("result-count telemetry failed: " + type(telemetry_error).__name__)
++                    try:
++                        log.exception("result-count telemetry failed while handling functional failure")
++                    finally:
++                        raise functional_error
++                try:
++                    with self._lock:
++                        if not self._closed and not self.paging and eng.paging:
++                            self.paging = True
++                except Exception as paging_error:
++                    if functional_error is None:
++                        raise
++                    functional_error.add_note("paging finalization failed: " + type(paging_error).__name__)
++                    try:
++                        log.exception("paging finalization failed while handling functional failure")
++                    finally:
++                        raise functional_error
++
++    def _publish_results(
++        self, engine_name: str | None, results: list[Result | LegacyResult], main_count=0
+     ):  # pylint: disable=too-many-branches
+         if self._closed:
+             log.debug("container is closed, ignoring results: %s", results)
+             return
+-        main_count = 0
+ 
+         for result in list(results):
+ 
+             if isinstance(result, Result):
+                 result.engine = result.engine or engine_name
+-                result.normalize_result_fields()
+-                if not self.on_result(result):
++                if not True:
+                     continue
+ 
+                 if isinstance(result, BaseAnswer):
+@@ -107,15 +157,14 @@
+             else:
+                 result["engine"] = result.get("engine") or engine_name or ""
+                 result = LegacyResult(result)  # for backward compatibility, will be romeved one day
+-                result.normalize_result_fields()
+ 
+                 if "suggestion" in result:
+-                    if self.on_result(result):
++                    if True:
+                         self.suggestions.add(result["suggestion"])
+                     continue
+ 
+                 if "answer" in result:
+-                    if self.on_result(result):
++                    if True:
+                         warnings.warn(
+                             f"answer results from engine {result.engine}"
+                             " are without typification / migrate to Answer class.",
+@@ -125,31 +174,28 @@
+                     continue
+ 
+                 if "correction" in result:
+-                    if self.on_result(result):
++                    if True:
+                         self.corrections.add(result["correction"])
+                     continue
+ 
+                 if "infobox" in result:
+-                    if self.on_result(result):
++                    if True:
+                         self._merge_infobox(result)
+                     continue
+ 
+                 if "engine_data" in result:
+-                    if self.on_result(result):
++                    if True:
+                         if result.engine:
+                             self.engine_data[result.engine][result["key"]] = result["engine_data"]
+                     continue
+ 
+-                if self.on_result(result):
++                if True:
+                     main_count += 1
+                     self._merge_main_result(result, main_count)
+                     continue
+ 
+-        if engine_name in searx.engines.engines:
+-            eng = searx.engines.engines[engine_name]
+-            histogram_observe(main_count, "engine", eng.name, "result", "count")
+-            if not self.paging and eng.paging:
+-                self.paging = True
++        return main_count
++
+ 
+     def _merge_infobox(self, new_infobox: LegacyResult):
+         add_infobox = True
+@@ -181,14 +227,17 @@
+             merged.positions.append(position)
+ 
+     def close(self):
+-        self._closed = True
+-        # infobox with images first
+-        self.infoboxes.sort(key=lambda infobox: not infobox.img_src)
+-
+-        for result in self.main_results_map.values():
+-            result.score = calculate_score(result, result.priority)
+-            for eng_name in result.engines:
+-                counter_add(result.score, 'engine', eng_name, 'score')
++        with self._lock:
++            if self._closed:
++                return
++            self._closed = True
++            # infobox with images first
++            self.infoboxes.sort(key=lambda infobox: not infobox.img_src)
++
++            for result in self.main_results_map.values():
++                result.score = calculate_score(result, result.priority)
++                for eng_name in result.engines:
++                    counter_add(result.score, 'engine', eng_name, 'score')
+ 
+     def get_ordered_results(self) -> list[MainResult | LegacyResult]:
+         """Returns a sorted list of results to be displayed in the main result
+@@ -251,7 +300,7 @@
+     def add_unresponsive_engine(self, engine_name: str, error_type: str, suspended: bool = False):
+         with self._lock:
+             if self._closed:
+-                log.error("call to ResultContainer.add_unresponsive_engine after ResultContainer.close")
++                log.warning("late engine error after response deadline: %s %s", engine_name, error_type)
+                 return
+             if searx.engines.engines[engine_name].display_error_messages:
+                 self.unresponsive_engines.add(UnresponsiveEngine(engine_name, error_type, suspended))
+@@ -259,7 +308,7 @@
+     def add_timing(self, engine_name: str, engine_time: float, page_load_time: float):
+         with self._lock:
+             if self._closed:
+-                log.error("call to ResultContainer.add_timing after ResultContainer.close")
++                log.debug("late engine timing after response deadline: %s", engine_name)
+                 return
+             self.timings.append(Timing(engine_name, total=engine_time, load=page_load_time))
+ 
+--- a/searx/search/processors/abstract.py
++++ b/searx/search/processors/abstract.py
+@@ -190,7 +190,11 @@
+             error_message = module_name + exception_class.__qualname__
+         else:
+             error_message = exception_or_message
+-        result_container.add_unresponsive_engine(self.engine.name, error_message)
++        with result_container._lock:
++            if result_container._closed:
++                self.logger.warning("late engine error after response deadline: %s", error_message)
++            else:
++                result_container.add_unresponsive_engine(self.engine.name, error_message)
+         # metrics
+         counter_inc('engine', self.engine.name, 'search', 'count', 'error')
+         if isinstance(exception_or_message, BaseException):
+@@ -212,14 +216,18 @@
+     ):
+         # update result_container
+         result_container.extend(self.engine.name, search_results)
+-        engine_time = default_timer() - start_time
+-        page_load_time = get_time_for_thread()
+-        result_container.add_timing(self.engine.name, engine_time, page_load_time)
+-        # metrics
+-        counter_inc('engine', self.engine.name, 'search', 'count', 'successful')
+-        histogram_observe(engine_time, 'engine', self.engine.name, 'time', 'total')
+-        if page_load_time is not None:
+-            histogram_observe(page_load_time, 'engine', self.engine.name, 'time', 'http')
++        with result_container._lock:
++            if result_container._closed:
++                self.handle_exception(result_container, "timeout", False)
++                return
++            engine_time = default_timer() - start_time
++            page_load_time = get_time_for_thread()
++            result_container.add_timing(self.engine.name, engine_time, page_load_time)
++            # metrics
++            counter_inc('engine', self.engine.name, 'search', 'count', 'successful')
++            histogram_observe(engine_time, 'engine', self.engine.name, 'time', 'total')
++            if page_load_time is not None:
++                histogram_observe(page_load_time, 'engine', self.engine.name, 'time', 'http')
+ 
+     def extend_container(
+         self,
+@@ -234,7 +242,9 @@
+             # check if the engine accepted the request
+             if search_results is not None:
+                 self._extend_container_basic(result_container, start_time, search_results)
+-            self.suspended_status.resume()
++            with result_container._lock:
++                if not result_container._closed:
++                    self.suspended_status.resume()
+ 
+     def extend_container_if_suspended(self, result_container: "ResultContainer") -> bool:
+         if self.suspended_status.is_suspended:

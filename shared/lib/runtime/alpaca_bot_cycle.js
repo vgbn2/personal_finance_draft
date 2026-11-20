@@ -234,70 +234,86 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     const exitingBySymbol = new Map();
     const pendingBySymbol = new Map();
 
-    // Reconcile pending exits against broker positions (fill-confirmed accounting)
+    // Inventory changes cannot identify which order filled.
     for (const position of state.positions) {
       if (position.exit_pending) {
-        if (!pendingBySymbol.has(position.symbol)) {
-          pendingBySymbol.set(position.symbol, []);
+        const key = position.exitOrderId || `legacy:${position.symbol}`;
+        if (!pendingBySymbol.has(key)) {
+          pendingBySymbol.set(key, []);
         }
-        pendingBySymbol.get(position.symbol).push(position);
+        pendingBySymbol.get(key).push(position);
       }
     }
 
-    for (const [symbol, pendingList] of pendingBySymbol.entries()) {
-      const brokerPos = brokerBySymbol.get(symbol);
-      const currentBrokerQty = brokerPos ? Math.max(0, Number(brokerPos.quantity || 0)) : 0;
-      const totalPendingQty = pendingList.reduce((sum, p) => sum + Number(p.qty || 0), 0);
-      let filledToAllocate = Math.max(0, totalPendingQty - currentBrokerQty);
-
-      for (const position of pendingList) {
-        const posQty = Number(position.qty || 0);
-        if (filledToAllocate >= posQty) {
-          // Confirmed full fill
-          filledToAllocate -= posQty;
-          const exitPrice = position.exitPrice || (brokerPos && Number(brokerPos.quantity) > 0
-            ? Number(brokerPos.marketValue) / Number(brokerPos.quantity)
-            : position.fillPrice);
-          const { historyEntry } = buildExitOutcome(
-            position,
-            position.exitReason || 'target',
-            exitPrice,
-            posQty,
-            result.cycleId,
-            executionEnabled
-          );
-          state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
-          result.sellsExecuted++;
-        } else if (filledToAllocate > 0) {
-          // Confirmed partial fill
-          const partialFilled = filledToAllocate;
-          filledToAllocate = 0;
-          const exitPrice = position.exitPrice || (brokerPos && Number(brokerPos.quantity) > 0
-            ? Number(brokerPos.marketValue) / Number(brokerPos.quantity)
-            : position.fillPrice);
-          const { historyEntry, remainingPosition } = buildExitOutcome(
-            position,
-            position.exitReason || 'target',
-            exitPrice,
-            partialFilled,
-            result.cycleId,
-            executionEnabled
-          );
-          state.cycleHistory = [historyEntry, ...state.cycleHistory].slice(0, 50);
-          result.sellsExecuted++;
-          if (remainingPosition) {
+    for (const pendingList of pendingBySymbol.values()) {
+      const first = pendingList[0];
+      try {
+        if (!first.exitOrderId) throw new Error('legacy pending exit needs order reconciliation');
+        const fetchOrder = options.fetchOrder || ((orderId) => runGatewayCommand([
+          'order',
+          orderId,
+          ...(isLive ? ['--live'] : []),
+          ...(providerPaper ? ['--paper-provider'] : []),
+          '--json',
+        ]));
+        const receipt = await fetchOrder(first.exitOrderId);
+        const order = receipt?.order;
+        const previousQty = Number(first.exitFilledQty || 0);
+        const previousNotional = Number(first.exitFilledNotional || 0);
+        const filledQty = Number(order?.filledQty);
+        const notional = filledQty === 0 ? 0 : filledQty * Number(order?.filledAvgPrice);
+        const pendingQty = pendingList.reduce((sum, position) => sum + Number(position.qty), 0);
+        if (receipt?.ok !== true || order?.orderId !== first.exitOrderId ||
+            order.symbol !== first.symbol || order.side !== 'sell' ||
+            typeof order.status !== 'string' || !order.status ||
+            !Number.isFinite(previousQty) || previousQty < 0 ||
+            !Number.isFinite(previousNotional) || previousNotional < 0 ||
+            !Number.isFinite(pendingQty) || pendingQty <= 0 ||
+            !Number.isFinite(filledQty) || filledQty < previousQty ||
+            filledQty - previousQty > pendingQty + 1e-9 ||
+            !Number.isFinite(notional) || notional < previousNotional ||
+            (filledQty === previousQty && notional !== previousNotional) ||
+            (order.status === 'filled' && Math.abs(filledQty - previousQty - pendingQty) > 1e-9) ||
+            (filledQty > previousQty && notional <= previousNotional) ||
+            pendingList.some((position) => position.symbol !== first.symbol ||
+              !Number.isFinite(Number(position.qty)) || Number(position.qty) <= 0 ||
+              position.exitFilledQty !== first.exitFilledQty ||
+              position.exitFilledNotional !== first.exitFilledNotional)) {
+          throw new Error('invalid or regressed order fill receipt');
+        }
+        let filledToAllocate = filledQty - previousQty;
+        const exitPrice = filledToAllocate > 0 ? (notional - previousNotional) / filledToAllocate : null;
+        const terminal = ['filled', 'canceled', 'expired', 'rejected'].includes(order.status);
+        for (const position of pendingList) {
+          const soldQty = Math.min(Number(position.qty), filledToAllocate);
+          filledToAllocate -= soldQty;
+          let retained = position;
+          if (soldQty > 0) {
+            const outcome = buildExitOutcome(
+              position,
+              position.exitReason || 'target',
+              exitPrice,
+              soldQty,
+              result.cycleId,
+              executionEnabled,
+            );
+            state.cycleHistory = [outcome.historyEntry, ...state.cycleHistory].slice(0, 50);
+            result.sellsExecuted++;
+            retained = outcome.remainingPosition;
+          }
+          if (retained) {
             remaining.push({
-              ...remainingPosition,
-              exit_pending: true,
-              exitPendingAt: position.exitPendingAt,
-              exitReason: position.exitReason,
-              exitPrice: position.exitPrice,
+              ...retained,
+              exit_pending: !terminal,
+              exitOrderId: terminal ? null : first.exitOrderId,
+              exitFilledQty: terminal ? 0 : filledQty,
+              exitFilledNotional: terminal ? 0 : notional,
             });
           }
-        } else {
-          // Still pending broker fill
-          remaining.push(position);
         }
+      } catch (error) {
+        remaining.push(...pendingList);
+        result.errors.push(`${first.symbol}: ${error.message}`);
       }
     }
 
@@ -330,6 +346,11 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     }
 
     for (const [symbol, exitingItems] of exitingBySymbol.entries()) {
+      if (remaining.some((position) => position.symbol === symbol && position.exit_pending)) {
+        remaining.push(...exitingItems.map((item) => item.position));
+        result.errors.push(`Pending exit for ${symbol} requires reconciliation; skipping duplicate exit.`);
+        continue;
+      }
       const available = availableBySymbol.get(symbol) || 0;
       const totalDesiredQty = exitingItems.reduce((sum, item) => sum + Number(item.position.qty || 0), 0);
       const aggregateSellQty = resolveExitQty(totalDesiredQty, available);
@@ -373,9 +394,15 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             'bot'
           ];
           if (process.env.SOVEREIGN_TRADE_PIN) sellArgs.push('--pin', process.env.SOVEREIGN_TRADE_PIN);
-          const exitCode = await tradeFn(sellArgs);
-          if (exitCode !== 0) {
-            result.errors.push(`Exit sell failed for ${symbol}: non-zero exit ${exitCode}`);
+          const receipt = await tradeFn(sellArgs, { receipt: true });
+          if (receipt?.ok !== true || typeof receipt.order?.orderId !== 'string' || !receipt.order.orderId) {
+            result.errors.push(typeof receipt === 'number' && receipt !== 0
+              ? `Exit sell failed for ${symbol}: non-zero exit ${receipt}`
+              : `Exit sell for ${symbol}: order receipt unavailable; reconciliation required`);
+            if (typeof receipt !== 'number' || receipt === 0) {
+              for (const item of exitingItems) remaining.push({ ...item.position, exit_pending: true });
+              continue;
+            }
             for (const item of exitingItems) remaining.push(item.position);
             continue;
           }
@@ -393,6 +420,9 @@ async function runAlpacaExitCheck(args = [], options = {}) {
                 ...item.position,
                 qty: allocatedQty,
                 exit_pending: true,
+                exitOrderId: receipt.order.orderId,
+                exitFilledQty: 0,
+                exitFilledNotional: 0,
                 exitPendingAt: new Date().toISOString(),
                 exitReason: item.exitReason,
                 exitPrice: item.currentPrice,
@@ -409,7 +439,8 @@ async function runAlpacaExitCheck(args = [], options = {}) {
           continue;
         } catch (err) {
           result.errors.push(`Exit sell failed for ${symbol}: ${err.message}`);
-          for (const item of exitingItems) remaining.push(item.position);
+          // Submission may have reached the broker before a transport/parser failure.
+          for (const item of exitingItems) remaining.push({ ...item.position, exit_pending: true });
           continue;
         }
       }
