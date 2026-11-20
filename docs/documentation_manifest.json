@@ -36,6 +36,26 @@
   },
   "documents": [
     {
+      "path": "docs/Reports/2026-11-21-deep-blastthrough.md",
+      "type": "reference",
+      "audience": [
+        "contributors",
+        "operators"
+      ],
+      "owner": "architecture",
+      "status": "historical",
+      "source_paths": [
+        "backend/execution/src/index.ts",
+        "infra/docker/docker-compose.yml"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "evidence-status-change"
+      ]
+    },
+    {
       "path": "docs/architecture/mcp-bridge-capability-order.md",
       "type": "explanation",
       "audience": [

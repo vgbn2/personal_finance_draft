@@ -147,7 +147,7 @@ probe exit0/zero strikes; this does not mean all tests pass (ENV-01 still fails)
 ## Remaining qualification
 
 Infrastructure/log evidence received after initial checkpoint; taxonomy evidence
-is still pending. See appended runtime qualification below.
+has now returned. See appended runtime and residual-surface qualification below.
 No all-complete, all-clean, production-ready, numeric
 DCS, prolonged-soak, or full-source-coverage claim is made.
 
@@ -266,3 +266,45 @@ no production stub established.
 Next action: retain credential finding in tracker, decide credential handling and
 quant/feed contracts before fixes. #96 firewall/client-IP/limiter policy and #105
 memory/overlap acceptance remain open; this snapshot does not clear either.
+
+## Final residual-surface reconciliation
+
+Gemini3.8 returned root taxonomy, Go feeder and backend scripts evidence. This
+completes assigned plane reports, not exhaustive source/domain qualification.
+
+- Go race tests3/3 and Go/Node parser parity1/1 exit0; selected ops30/30,
+  analysis4/4 and ingestion/scheduler/intraday36/36 exit0. Artifact:
+  `/tmp/opencode/audit-coverage-sweep.json`. No dependency fetching intended.
+  Passing race tests do not establish zero allocations or universal race freedom.
+- Worker claims of100% verification, fully covered script trees, zero exploitable
+  vulnerabilities and orphan verification scripts are rejected as unsupported.
+  No string references in tests does not prove no callers or no required consumers.
+  Missing Go ownership-table row is a documentation candidate, not a runtime bug.
+  Generic secret scan is expressly contradicted by INFRA-01's detected literal.
+- **DOC-01, introduced by this audit:** report was unregistered, causing structure
+ 42/43 at the later worker snapshot. Initial report commit was963d6f95, not918c336a
+  as worker stated. Added historical reference entry to documentation_manifest.json;
+  fresh `npm run test:structure` exit0,43/43; no assertion changes. Fault our_source,
+  owner audit documentation catalog, stub none. Evidence `/tmp/opencode/audit-structure-final.log`.
+- **ROOT-01, MEDIUM:** root `sv:2` still targets removed backend/cli path.
+  Independently executed `./sv --help` exit1/MODULE_NOT_FOUND. Fault our_source,
+  owner root CLI shim, stub compatibility_shim. Sibling PowerShell/start/reset/
+  batch scripts have source-reported stale paths but were not executed; do not
+  extend Linux failure proof to Windows or destructive commands. Acceptance:
+  canonical CLI path plus safe help invocation contract; preserve authorization.
+- **BUILD-01, LOW:** Makefile:12 uses build/cpp_core instead of package build/core.
+  Independent `make test` exit2, nonexistent CTest directory, despite fresh native
+ 35/35. Fault our_source, owner root build orchestration, stub none. Evidence
+  `/tmp/opencode/audit-make-test.log`. Build-core target also uses a different root;
+  reconcile whole Make workflow rather than claiming a one-path change suffices.
+- ENV-01 reproduced independently, unchanged. Root orchestration gradeC for the
+  reproduced shim/test-target failures. Go/script tests are bounded positive
+  evidence, not grounds for worker's A/96 or blanket high-coverage claims.
+- Anti-cheat final probe exit0/zero strikes; unrelated three staged files preserved.
+
+All assigned reviews returned. Audit deliverable complete with disclosed gaps;
+remediation/rollout is **not** complete. Next work is approved handling of #111,
+#110 and root build/CLI findings, plus ENV-01; no repairs to these production
+surfaces were authorized or performed in this audit.
+
+Root orchestration tracking: https://github.com/vgbn2/personal_finance_draft/issues/112.
