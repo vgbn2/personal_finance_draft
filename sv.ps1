@@ -1,1 +1,1 @@
-node --no-deprecation backend/cli/sovereign_cli.js $args
+node --no-deprecation "$PSScriptRoot/frontend/cli-tui/sovereign_cli.js" @args

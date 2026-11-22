@@ -23,7 +23,7 @@ fi
 
 # 2. Start Data Ingestor (CLI watch)
 echo "[1/3] Starting Data Ingestor (CLI watch)..."
-"${NODE_BIN}" backend/cli/sovereign_cli.js watch > logs/ingestor.log 2>&1 &
+"${NODE_BIN}" frontend/cli-tui/sovereign_cli.js watch > logs/ingestor.log 2>&1 &
 INGESTOR_PID=$!
 
 # 3. Start Web API & Dashboard
@@ -34,10 +34,10 @@ DASHBOARD_PID=$!
 # 4. Start Execution Gateway
 echo "[3/3] Starting Execution Gateway..."
 if command -v npx >/dev/null 2>&1; then
-  npx tsx backend/gateway/src/index.ts --demo > logs/gateway.log 2>&1 &
+  npx tsx backend/execution/src/index.ts --demo > logs/gateway.log 2>&1 &
   GATEWAY_PID=$!
 else
-  "${NODE_BIN}" backend/gateway/src/index.ts --demo > logs/gateway.log 2>&1 &
+  "${NODE_BIN}" backend/execution/src/index.ts --demo > logs/gateway.log 2>&1 &
   GATEWAY_PID=$!
 fi
 

@@ -107,10 +107,14 @@ function loadSubPositionsLedger(filePath = DEFAULT_LEDGER_PATH) {
     try {
       const data = fs.readFileSync(filePath, 'utf8');
       const parsed = JSON.parse(data);
-      if (parsed && typeof parsed === 'object' && parsed.positions) {
+      if (parsed && typeof parsed === 'object' && parsed.positions &&
+          !Array.isArray(parsed.positions) && typeof parsed.positions === 'object' &&
+          Array.isArray(parsed.history) &&
+          (parsed.pending_orders === undefined || (parsed.pending_orders &&
+            typeof parsed.pending_orders === 'object' && !Array.isArray(parsed.pending_orders)))) {
         return parsed;
       }
-      throw new Error('Invalid sub_positions ledger schema: missing positions object');
+      throw new Error('Invalid sub_positions ledger schema');
     } catch (err) {
       throw new Error(`Failed to load sub-positions ledger from ${filePath}: ${err.message}`);
     }
@@ -162,6 +166,140 @@ function saveSubPositionsLedger(ledger, filePath = DEFAULT_LEDGER_PATH) {
  * @param {string} [filePath=DEFAULT_LEDGER_PATH]
  * @returns {Object} the recorded sub-position
  */
+function beginPendingOrder(order, filePath = DEFAULT_LEDGER_PATH) {
+  const symbol = String(order.instrumentId || '').toUpperCase();
+  const quantity = Number(order.quantity);
+  const clientId = order.clientOrderId;
+  if (!symbol || !clientId || !['buy', 'sell'].includes(order.side) || !Number.isFinite(quantity) || quantity <= 0) {
+    throw new Error('Invalid pending order');
+  }
+  return withFileLockSync(`${filePath}.lock`, () => {
+    const ledger = loadSubPositionsLedger(filePath);
+    ledger.pending_orders ||= {};
+    if (Object.hasOwn(ledger.pending_orders, clientId) || Object.values(ledger.pending_orders).some(
+      (item) => !item.terminal && item.symbol === symbol
+    )) {
+      throw new Error('Existing pending order requires reconciliation before submission');
+    }
+    const pending = {
+      client_id: clientId,
+      order_id: null,
+      symbol,
+      side: order.side,
+      quantity,
+      strategy_id: order.strategyId || order.strategy || 'manual',
+      source: order.source || (order.strategyId || order.strategy ? 'bot' : 'manual'),
+      timeframe: order.timeframe || '1m',
+      confidence: order.confidence ?? 1,
+      submitted_at: order.submittedAt || new Date().toISOString(),
+      filled_qty: 0,
+      filled_notional: 0,
+      terminal: false,
+      status: 'submission_unknown',
+      paper: Boolean(order.providerPaper),
+    };
+    ledger.pending_orders[clientId] = pending;
+    saveSubPositionsLedger(ledger, filePath);
+    return pending;
+  });
+}
+
+function attachPendingOrder(clientId, orderId, filePath = DEFAULT_LEDGER_PATH) {
+  return withFileLockSync(`${filePath}.lock`, () => {
+    const ledger = loadSubPositionsLedger(filePath);
+    const pending = ledger.pending_orders?.[clientId];
+    if (!pending || typeof orderId !== 'string' || !orderId || (pending.order_id && pending.order_id !== orderId)) {
+      throw new Error('Invalid pending order identity');
+    }
+    pending.order_id = orderId;
+    pending.status = 'submitted';
+    saveSubPositionsLedger(ledger, filePath);
+    return pending;
+  });
+}
+
+function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_PATH) {
+  return withFileLockSync(`${filePath}.lock`, () => {
+    const ledger = loadSubPositionsLedger(filePath);
+    const pending = ledger.pending_orders?.[clientId];
+    if (!pending || !pending.order_id || receipt.orderId !== pending.order_id ||
+        receipt.symbol !== pending.symbol || receipt.side !== pending.side || receipt.quantity !== pending.quantity) {
+      throw new Error('Receipt identity does not match pending order');
+    }
+    const filled = receipt.filledQty;
+    const average = receipt.filledAvgPrice;
+    if (!Number.isFinite(filled) || filled < 0 || filled > pending.quantity ||
+        (filled > 0 && (!Number.isFinite(average) || average <= 0)) ||
+        typeof receipt.status !== 'string' || !receipt.status ||
+        (receipt.status === 'filled' && filled !== pending.quantity)) {
+      throw new Error('Invalid cumulative fill receipt');
+    }
+    const notional = filled > 0 ? filled * average : 0;
+    const delta = filled - pending.filled_qty;
+    const cost = notional - pending.filled_notional;
+    if (delta < 0 || (delta === 0 && cost !== 0) || (delta > 0 && (!Number.isFinite(cost) || cost <= 0))) {
+      throw new Error('Cumulative receipt regressed or changed previously applied fills');
+    }
+    if (pending.terminal) {
+      if (delta !== 0) throw new Error('Terminal receipt changed previously applied fills');
+      return pending;
+    }
+    if (delta > 0) {
+      const list = ledger.positions[pending.symbol] ||= [];
+      if (pending.side === 'buy') {
+        let sub = list.find((item) => item.order_id === pending.order_id);
+        if (!sub) {
+          sub = {
+            sub_id: `sub_${clientId}`,
+            symbol: pending.symbol,
+            strategy_id: pending.strategy_id,
+            source: pending.source,
+            timeframe: pending.timeframe,
+            confidence: pending.confidence,
+            signature: clientId,
+            order_id: pending.order_id,
+            submitted_at: pending.submitted_at,
+            status: 'open',
+            quantity: 0,
+            entry_price: 0,
+          };
+          list.push(sub);
+        }
+        sub.entry_price = (sub.quantity * sub.entry_price + cost) / (sub.quantity + delta);
+        sub.quantity += delta;
+      } else {
+        const available = list.filter((item) => item.strategy_id === pending.strategy_id && item.status === 'open')
+          .reduce((sum, item) => sum + item.quantity, 0);
+        if (available + 1e-8 < delta) throw new Error('Confirmed exit exceeds attributed holdings');
+        let remaining = delta;
+        for (let i = list.length - 1; i >= 0 && remaining > 0; i--) {
+          const sub = list[i];
+          if (sub.strategy_id !== pending.strategy_id || sub.status !== 'open') continue;
+          const closed = Math.min(sub.quantity, remaining);
+          ledger.history.push({
+            ...sub,
+            quantity: closed,
+            status: closed === sub.quantity ? 'closed' : 'partially_closed',
+            closed_at: new Date().toISOString(),
+            exit_price: cost / delta,
+            exit_order_id: pending.order_id,
+          });
+          sub.quantity -= closed;
+          remaining -= closed;
+          if (sub.quantity === 0) list.splice(i, 1);
+        }
+        if (!list.length) delete ledger.positions[pending.symbol];
+      }
+    }
+    pending.filled_qty = filled;
+    pending.filled_notional = notional;
+    pending.status = receipt.status;
+    pending.terminal = ['filled', 'canceled', 'expired', 'rejected'].includes(receipt.status);
+    saveSubPositionsLedger(ledger, filePath);
+    return pending;
+  });
+}
+
 function recordSubPositionEntry(entry, filePath = DEFAULT_LEDGER_PATH) {
   const sym = String(entry.symbol || '').toUpperCase();
   const qty = Number(entry.quantity);
@@ -366,6 +504,9 @@ function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH
 }
 
 module.exports = {
+  beginPendingOrder,
+  attachPendingOrder,
+  applyPendingOrderReceipt,
   generateOrderSignature,
   parseOrderSignature,
   loadSubPositionsLedger,

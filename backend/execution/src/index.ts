@@ -293,18 +293,20 @@ class RiskEngineBridge {
   }
 }
 
-class ExecutionGateway {
+export class ExecutionGateway {
   private dryRun: boolean;
   private adapter: BrokerAdapter;
   private riskEngine: RiskEngineBridge;
   private persistence: any; // PersistenceBridge (CommonJS require — value, not a type)
   private paperMaxNotional: number | null;
+  private ledgerPath?: string;
 
-  constructor(options: { dryRun?: boolean; adapter?: BrokerAdapter; paperMaxNotional?: number } = {}) {
+  constructor(options: { dryRun?: boolean; adapter?: BrokerAdapter; paperMaxNotional?: number; ledgerPath?: string } = {}) {
     this.dryRun = options.dryRun ?? true;
     this.adapter = options.adapter || new AlpacaAdapter();
     this.riskEngine = new RiskEngineBridge();
     this.persistence = new PersistenceBridge();
+    this.ledgerPath = options.ledgerPath;
     this.paperMaxNotional = Number.isFinite(options.paperMaxNotional) && Number(options.paperMaxNotional) > 0
       ? Number(options.paperMaxNotional)
       : null;
@@ -373,14 +375,29 @@ class ExecutionGateway {
       await this.persistence.logOrder(order, 'simulated');
     } else {
       try {
+        const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+        const receiptAccounting = order.broker === 'alpaca' || this.adapter instanceof AlpacaAdapter;
+        if (receiptAccounting) {
+          if (!this.adapter.getOrder) throw new Error('Alpaca receipt lookup is required');
+          await this.reconcilePendingOrders(Boolean(order.providerPaper));
+          order.clientOrderId ||= crypto.randomUUID();
+          subLedger.beginPendingOrder(order, this.ledgerPath);
+        }
         const result = await this.adapter.placeOrder(order);
         const label = order.providerPaper ? 'PAPER-ALPACA' : 'LIVE';
         console.log(`[${label}] Order placed successfully: ${result.orderId} (Status: ${result.status})`);
         order.status = result.status === 'filled' ? OrderStatus.FILLED : OrderStatus.SUBMITTED;
         order.orderId = result.orderId;
 
-        try {
-          const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+        if (receiptAccounting) {
+          // Submission status is not fill evidence. Persist the ID before looking up receipts.
+          order.status = OrderStatus.SUBMITTED;
+          subLedger.attachPendingOrder(order.clientOrderId, result.orderId, this.ledgerPath);
+          const receipt = await this.adapter.getOrder!(result.orderId);
+          subLedger.applyPendingOrderReceipt(order.clientOrderId, receipt, this.ledgerPath);
+          if (receipt.status === 'filled') order.status = OrderStatus.FILLED;
+        } else try {
+          // Other brokers retain their existing contract until their receipts are qualified.
           if (order.side === 'buy') {
             subLedger.recordSubPositionEntry({
               symbol: order.instrumentId,
@@ -424,6 +441,18 @@ class ExecutionGateway {
           paper: Boolean(order.providerPaper),
         });
       }
+    }
+  }
+
+  async reconcilePendingOrders(paper: boolean): Promise<void> {
+    if (!this.adapter.getOrder) throw new Error('Receipt lookup is unavailable');
+    const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
+    const ledger = subLedger.loadSubPositionsLedger(this.ledgerPath);
+    for (const pending of Object.values(ledger.pending_orders || {}) as any[]) {
+      if (pending.terminal || pending.paper !== paper) continue;
+      if (!pending.order_id) throw new Error('Unknown submission requires operator reconciliation; retry prohibited');
+      const receipt = await this.adapter.getOrder(pending.order_id);
+      subLedger.applyPendingOrderReceipt(pending.client_id, receipt, this.ledgerPath);
     }
   }
 
@@ -768,6 +797,9 @@ export async function main() {
     }
   } else if (command === 'positions') {
     try {
+      if (broker === 'alpaca') {
+        await gateway.reconcilePendingOrders(providerPaper);
+      }
       const rawPositions = await adapter.getPositions();
       let positions = rawPositions;
       try {

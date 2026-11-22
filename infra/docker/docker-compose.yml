@@ -469,7 +469,7 @@ services:
     environment:
       <<: *central-runtime
       SOVEREIGN_ROUTER_URL: ${SOVEREIGN_ROUTER_URL:-http://192.168.4.103:20128/v1}
-      SOVEREIGN_ROUTER_KEY: ${SOVEREIGN_ROUTER_KEY:-sk-1b6920feeeab2737-617eb2-92380c8a}
+      SOVEREIGN_ROUTER_KEY: ${SOVEREIGN_ROUTER_KEY:?SOVEREIGN_ROUTER_KEY is required}
       SOVEREIGN_ROUTER_MODEL: ${SOVEREIGN_ROUTER_MODEL:-ag/gemini-3.8-flash}
       NODE_OPTIONS: --max-old-space-size=1536
     volumes:

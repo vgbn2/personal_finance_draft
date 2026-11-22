@@ -489,6 +489,11 @@
       "profiles": [],
       "allowed_surfaces": ["default_cli", "web", "mcp", "gateway_public", "gateway_account", "writer", "operator", "execution", "process_internal"],
       "members": [
+        {
+          "name": "ALPACA_CONTRACT_ROOT",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
         {"name": "APPDATA"},
         {"name": "CI"},
         {"name": "DISABLE_HMR"},

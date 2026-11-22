@@ -308,3 +308,55 @@ remediation/rollout is **not** complete. Next work is approved handling of #111,
 surfaces were authorized or performed in this audit.
 
 Root orchestration tracking: https://github.com/vgbn2/personal_finance_draft/issues/112.
+
+## Implementation continuation — 2026-11-22
+
+Root required shims now dispatch canonical frontend/cli-tui and backend/execution
+owners; PowerShell sv anchors to PSScriptRoot. Make configure/build/test share
+CORE_BUILD_DIR (default build/core), and CTest rejects zero discovered tests.
+This reconnects existing entrypoints rather than creating another CLI: like
+updating forwarding addresses after a move, the original doors remain usable.
+
+ALPACA_CONTRACT_ROOT is classified as internal, developer-only, process_internal
+only. The existing SDK test override is preserved, not hidden from inventory;
+all production surface projections reject it. Existing failing tests unchanged.
+
+Local verification: root entrypoints3/3; environment/projection9/9; scanner exit0;
+structure exit0; clean Make build and CTest35/35 both pass from
+/tmp/opencode/fix-root-native. Windows scripts source-checked only, not executed. No start/reset scripts
+launched, no provider requests/deployment/orders. Credential policy #111 and ledger
+recovery #110 remain blocked on explicit decisions. Exact diff/evidence under
+/tmp/opencode/root-paths-D0.json, environment-D0.json and fix-*.log.
+
+Final integrity: anti-cheat --no-revert0/zero strikes; YAGNI0; classifier0;
+receipt regression41/41; shell syntax0; exact planned production contents matched.
+
+User selected whole-Compose missing-key failure for #111. Literal removed in favor
+of required interpolation, including empty input rejection. Full Compose
+config --quiet --no-env-resolution: unset key exit1, supplied fixture key exit0;
+isolated real Compose interpolation regression1/1. No service change or rotation.
+
+User selected ledger-owned pending orders for #110. Alpaca gateway now persists
+intent before submission, attaches returned IDs before lookup, and applies only
+validated order-specific cumulative fills. Position changes and receipt watermarks
+share one locked atomic ledger commit. Replays do not double-apply fills; pending
+sells retain holdings until confirmed. Unknown submission/lookup/persistence errors
+fail closed, blocking automatic resubmission. Reconciliation runs before another
+Alpaca submission and on the positions CLI; no background polling was added.
+This is a receipt book, not a shopping list: requesting ten shares no longer puts
+ten on the shelf; each confirmed delivery updates stock and its receipt together.
+
+Fresh local evidence: accounting45/45 including actual gateway/SDK/local HTTP/file
+seam, accepted/partial/canceled/filled receipts, restart replay, rejected regression,
+invalid identity/quantity, corrupt disk and injected atomic rename failure. Root/
+ledger/projection/Compose focused15/15; clean native35/35; structure0; scanner0;
+TypeScript compile0. Classifier1: three findings independently reproduced on HEAD
+(buildRiskContext, collect, saveSubPositionsLedger), not a passing gate. Anti-cheat
+zero strikes; YAGNI0. No provider traffic, deployment, orders, commit or push.
+
+Remaining qualification: Windows execution, multi-account ledger namespacing,
+operator handling of unknown submissions, and deployed/recovery/soak acceptance.
+Other brokers retain existing accounting contracts; they are not qualified by the
+Alpaca seam. Completed-order receipt records remain retained for idempotency;
+compaction needs a separately proven retention policy. Existing legacy holdings
+are not rewritten. Resource/exposure/backup acceptance remains open.

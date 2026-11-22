@@ -10,6 +10,58 @@ const { promisify } = require('node:util');
 const root = process.env.ALPACA_CONTRACT_ROOT || path.resolve(__dirname, '../../..');
 const { Alpaca, trading, marketData } = require(require.resolve('@alpacahq/alpaca-trade-api', { paths: [root] }));
 const { AlpacaAdapter } = require(path.join(root, 'backend/execution/dist/adapters/alpaca_adapter.js'));
+const { ExecutionGateway } = require(path.join(root, 'backend/execution/dist/index.js'));
+
+test('gateway persists actual SDK HTTP receipts without booking requested quantities', async (t) => {
+  const fs = require('node:fs');
+  const ledger = require(path.join(root, 'shared/lib/runtime/sub_positions_ledger'));
+  const dir = fs.mkdtempSync('/tmp/opencode/gateway-http-');
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const file = path.join(dir, 'ledger.json');
+  const f = await fixture(t);
+  f.state.submit = {
+    ...order,
+    symbol: 'SPY',
+    side: 'buy',
+    qty: '10',
+    filled_qty: '0',
+    filled_avg_price: null,
+  };
+  const gateway = new ExecutionGateway({ dryRun: false, adapter: f.adapter, ledgerPath: file });
+  const input = {
+    instrumentId: 'SPY',
+    side: 'buy',
+    type: 'market',
+    quantity: 10,
+    price: 1,
+    broker: 'alpaca',
+    providerPaper: true,
+    strategyId: 'fixture',
+    clientOrderId: 'gateway-fixture',
+  };
+  await gateway.execute(input);
+  assert.equal(input.error, undefined);
+  assert.deepEqual(ledger.loadSubPositionsLedger(file).positions, {});
+  f.state.submit.filled_qty = '2';
+  f.state.submit.filled_avg_price = '101';
+  f.state.submit.status = 'partially_filled';
+  const restarted = new ExecutionGateway({ adapter: f.adapter, ledgerPath: file });
+  await restarted.reconcilePendingOrders(true);
+  await restarted.reconcilePendingOrders(true);
+  assert.equal(ledger.loadSubPositionsLedger(file).positions.SPY[0].quantity, 2);
+  assert.equal(ledger.loadSubPositionsLedger(file).positions.SPY[0].entry_price, 101);
+  assert.equal(f.requests.filter((request) => request.method === 'POST').length, 1);
+  f.state.submit.status = 'canceled';
+  await restarted.reconcilePendingOrders(true);
+  f.state.submitStatus = 503;
+  const uncertain = { ...input, clientOrderId: 'uncertain-fixture', status: undefined };
+  await gateway.execute(uncertain);
+  assert.equal(ledger.loadSubPositionsLedger(file).pending_orders['uncertain-fixture'].order_id, null);
+  const submitted = f.requests.filter((request) => request.method === 'POST').length;
+  f.state.submitStatus = 200;
+  await gateway.execute({ ...input, clientOrderId: 'must-not-retry', status: undefined });
+  assert.equal(f.requests.filter((request) => request.method === 'POST').length, submitted);
+});
 
 const position = {
   symbol: 'BTC/USD',
@@ -41,6 +93,7 @@ async function fixture(t) {
     status: 200,
     historyStatus: 200,
     cancelStatus: 204,
+    submitStatus: 200,
   };
   const server = http.createServer(async (req, res) => {
     const chunks = [];
@@ -58,7 +111,10 @@ async function fixture(t) {
     let payload;
     if (url.pathname === '/v2/account') payload = state.account;
     else if (url.pathname === '/v2/positions') payload = state.positions;
-    else if (url.pathname === '/v2/orders' && req.method === 'POST') payload = state.submit;
+    else if (url.pathname === '/v2/orders' && req.method === 'POST') {
+      payload = state.submit;
+      status = state.status === 200 ? state.submitStatus : state.status;
+    }
     else if (url.pathname === '/v2/orders') {
       status = state.historyStatus;
       payload = state.orders;
