@@ -2,6 +2,7 @@
 
 ARG SOVEREIGN_SOURCE_REVISION=unverified
 ARG SOVEREIGN_SOURCE_TREE=unverified
+ARG ONNX_RUNTIME_PROVENANCE=upstream:1.17.1
 
 FROM golang:1.24-alpine AS go-builder
 WORKDIR /src
@@ -42,20 +43,32 @@ RUN npm ci --ignore-scripts
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
-RUN npm run build --prefix backend/execution \
+ARG ONNX_RUNTIME_SOURCE_DIR=""
+RUN set -eu; \
+    set --; \
+    if [ -n "$ONNX_RUNTIME_SOURCE_DIR" ]; then \
+      set -- "-DFETCHCONTENT_SOURCE_DIR_ONNXRUNTIME_RELEASE=$ONNX_RUNTIME_SOURCE_DIR"; \
+    fi; \
+    npm run build --prefix backend/execution \
     && cmake -S backend/cpp_core -B backend/cpp_core/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
-    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth
+      "$@" \
+    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth \
+    && mkdir -p /opt/onnxruntime/lib \
+    && onnx_libdir=$(sed -n 's/^SOVEREIGN_ONNXRUNTIME_LIBDIR:INTERNAL=//p' backend/cpp_core/build/CMakeCache.txt) \
+    && cp -a "$onnx_libdir"/libonnxruntime.so* /opt/onnxruntime/lib/
 
 FROM node:22-bookworm-slim AS runtime
 
 ARG SOVEREIGN_SOURCE_REVISION
 ARG SOVEREIGN_SOURCE_TREE
+ARG ONNX_RUNTIME_PROVENANCE
 
 LABEL org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
       io.sovereign.source-tree="${SOVEREIGN_SOURCE_TREE}" \
-      io.sovereign.build-contract="1"
+      io.sovereign.build-contract="1" \
+      io.sovereign.onnx-runtime-source="${ONNX_RUNTIME_PROVENANCE}"
 
 ENV NODE_ENV=production \
     SOVEREIGN_WEB_HOST=0.0.0.0 \
@@ -77,8 +90,10 @@ COPY --from=build --chown=node:node /app/shared ./shared
 COPY --from=build --chown=node:node /app/configs ./configs
 COPY --from=build --chown=node:node /app/tools ./tools
 COPY --from=build /usr/lib/x86_64-linux-gnu/libgomp.so.1* /usr/lib/x86_64-linux-gnu/
+COPY --from=build /opt/onnxruntime/lib/ /usr/local/lib/
 
-RUN mkdir -p storage/data storage/logs storage/runtime \
+RUN ldconfig \
+    && mkdir -p storage/data storage/logs storage/runtime \
     && chown -R node:node storage
 
 USER node

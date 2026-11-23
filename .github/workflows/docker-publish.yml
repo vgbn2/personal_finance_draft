@@ -41,6 +41,26 @@ jobs:
         id: source
         run: echo "tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
 
+      # Upstream release/API returned 404; this is the verified deployed 1.17.1 package, not an upstream download.
+      - name: Stage checksum-pinned deployment-recovered ONNX Runtime
+        id: onnx
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ONNX_RUNTIME_SHA256: c389a5f69a57dfc798dde1170fc81184b594c4fb03c36f48ad1d4a746e1f71f8
+        run: |
+          set -euo pipefail
+          asset=onnxruntime-linux-x64-1.17.1-deployment-recovered.tgz
+          download_dir=$(mktemp -d "$RUNNER_TEMP/onnx-recovery.XXXXXX")
+          gh release download sv-dependency-onnx-1.17.1 \
+            --repo "$GITHUB_REPOSITORY" --pattern "$asset" --dir "$download_dir"
+          echo "$ONNX_RUNTIME_SHA256  $download_dir/$asset" | sha256sum --check --strict
+          mkdir -p .build-deps/onnxruntime
+          tar -xzf "$download_dir/$asset" --strip-components=1 -C .build-deps/onnxruntime
+          test "$(cat .build-deps/onnxruntime/VERSION_NUMBER)" = "1.17.1"
+          test -f .build-deps/onnxruntime/include/onnxruntime_cxx_api.h
+          echo "a34d8c226994dd4af2b2250442fc236ebba97aefc7ec451c35a86216588d2f69  .build-deps/onnxruntime/lib/libonnxruntime.so.1.17.1" | sha256sum --check --strict
+          echo "provenance=deployment-recovered:sv-dependency-onnx-1.17.1:sha256:$ONNX_RUNTIME_SHA256" >> "$GITHUB_OUTPUT"
+
       - name: Build All-in-One image for testing
         uses: docker/build-push-action@v7
         with:
@@ -51,6 +71,8 @@ jobs:
           build-args: |
             SOVEREIGN_SOURCE_REVISION=${{ github.sha }}
             SOVEREIGN_SOURCE_TREE=${{ steps.source.outputs.tree }}
+            ONNX_RUNTIME_SOURCE_DIR=/app/.build-deps/onnxruntime
+            ONNX_RUNTIME_PROVENANCE=${{ steps.onnx.outputs.provenance }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -104,12 +126,14 @@ jobs:
         run: |
           echo "Checking C++ binary exists and is executable..."
           docker exec sv-allinone-test test -x /app/backend/cpp_core/build/sovereign_wealth
+          docker exec sv-allinone-test /app/backend/cpp_core/build/sovereign_wealth --help
           echo "Checking Xvfb display server is running..."
           docker exec sv-allinone-test pgrep -f Xvfb
 
       - name: Verify structured rule execution boundaries
         run: |
           docker cp tests sv-allinone-test:/app/tests
+          docker exec sv-allinone-test mkdir -p /tmp/opencode
           docker exec sv-allinone-test node --test \
             tests/scripts/strategy/strategy_rules.test.js \
             tests/scripts/strategy/strategy_rules_seams.test.js \
@@ -127,6 +151,11 @@ jobs:
           file: Dockerfile
           load: true
           tags: sovereign-slim:test
+          build-args: |
+            SOVEREIGN_SOURCE_REVISION=${{ github.sha }}
+            SOVEREIGN_SOURCE_TREE=${{ steps.source.outputs.tree }}
+            ONNX_RUNTIME_SOURCE_DIR=/app/.build-deps/onnxruntime
+            ONNX_RUNTIME_PROVENANCE=${{ steps.onnx.outputs.provenance }}
           cache-from: type=gha
 
       - name: Verify slim production container
@@ -163,6 +192,7 @@ jobs:
           docker exec sv-slim-test node frontend/cli-tui/sovereign_cli.js status --json
           docker exec sv-slim-test node frontend/cli-tui/sovereign_cli.js doctor || true
           docker exec sv-slim-test test -x /app/backend/cpp_core/build/sovereign_wealth
+          docker exec sv-slim-test /app/backend/cpp_core/build/sovereign_wealth --help
           docker stop -t 10 sv-slim-test
           docker rm sv-slim-test
 
@@ -211,6 +241,8 @@ jobs:
           build-args: |
             SOVEREIGN_SOURCE_REVISION=${{ github.sha }}
             SOVEREIGN_SOURCE_TREE=${{ steps.source.outputs.tree }}
+            ONNX_RUNTIME_SOURCE_DIR=/app/.build-deps/onnxruntime
+            ONNX_RUNTIME_PROVENANCE=${{ steps.onnx.outputs.provenance }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

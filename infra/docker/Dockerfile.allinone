@@ -4,6 +4,7 @@
 
 ARG SOVEREIGN_SOURCE_REVISION=unverified
 ARG SOVEREIGN_SOURCE_TREE=unverified
+ARG ONNX_RUNTIME_PROVENANCE=upstream:1.17.1
 
 # --- STAGE 0: Frontend Builder ---
 FROM node:22-bookworm AS frontend-builder
@@ -36,24 +37,36 @@ RUN npm ci --ignore-scripts
 COPY . .
 COPY --from=frontend-builder /src/build/dashboard ./build/dashboard
 
-RUN npm run build --prefix backend/execution \
+ARG ONNX_RUNTIME_SOURCE_DIR=""
+RUN set -eu; \
+    set --; \
+    if [ -n "$ONNX_RUNTIME_SOURCE_DIR" ]; then \
+      set -- "-DFETCHCONTENT_SOURCE_DIR_ONNXRUNTIME_RELEASE=$ONNX_RUNTIME_SOURCE_DIR"; \
+    fi; \
+    npm run build --prefix backend/execution \
     && cmake -S backend/cpp_core -B backend/cpp_core/build \
       -DCMAKE_BUILD_TYPE=Release \
       -DSOVEREIGN_ENABLE_ONNX_RUNTIME=ON \
-    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth
+      "$@" \
+    && cmake --build backend/cpp_core/build --parallel --target sovereign_wealth \
+    && mkdir -p /opt/onnxruntime/lib \
+    && onnx_libdir=$(sed -n 's/^SOVEREIGN_ONNXRUNTIME_LIBDIR:INTERNAL=//p' backend/cpp_core/build/CMakeCache.txt) \
+    && cp -a "$onnx_libdir"/libonnxruntime.so* /opt/onnxruntime/lib/
 
 # --- STAGE 2: Unified Runtime with Headless Wine 9 & Node 22 LTS ---
 FROM ubuntu:22.04 AS runtime
 
 ARG SOVEREIGN_SOURCE_REVISION
 ARG SOVEREIGN_SOURCE_TREE
+ARG ONNX_RUNTIME_PROVENANCE
 
 LABEL org.opencontainers.image.source="https://github.com/vgbn2/sovereign-trades" \
       org.opencontainers.image.description="Sovereign Trading Platform All-in-One Container" \
       org.opencontainers.image.licenses="SEE LICENSE IN LICENSE" \
       org.opencontainers.image.revision="${SOVEREIGN_SOURCE_REVISION}" \
       io.sovereign.source-tree="${SOVEREIGN_SOURCE_TREE}" \
-      io.sovereign.build-contract="all-in-one"
+      io.sovereign.build-contract="all-in-one" \
+      io.sovereign.onnx-runtime-source="${ONNX_RUNTIME_PROVENANCE}"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     WINEARCH=win64 \
@@ -113,11 +126,12 @@ COPY --from=build --chown=sovereign:sovereign /app/build/dashboard ./build/dashb
 COPY --from=build --chown=sovereign:sovereign /app/shared ./shared
 COPY --from=build --chown=sovereign:sovereign /app/configs ./configs
 COPY --from=build --chown=sovereign:sovereign /app/tools ./tools
+COPY --from=build /opt/onnxruntime/lib/ /usr/local/lib/
 COPY --from=build --chown=sovereign:sovereign /app/tools/mt5 /opt/mt5/terminal/MQL5/Experts
 COPY --chown=sovereign:sovereign infra/docker/entrypoint.allinone.sh /app/entrypoint.sh
 
 USER root
-RUN chmod +x /app/entrypoint.sh
+RUN ldconfig && chmod +x /app/entrypoint.sh
 USER sovereign
 
 EXPOSE 8787 8282
