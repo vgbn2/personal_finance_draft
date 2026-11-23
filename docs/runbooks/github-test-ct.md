@@ -259,6 +259,29 @@ drives entries and horizon drives exits (`shared/lib/strategy/backtest.js:764–
 the C++ frame path serializes those predictions at lines 1033–1084. Textual rules
 instead feed YAML documentation (`interval_discovery.js:998–1000`).
 
+### Rule-contract decision required before implementation
+
+Current source has the same gap as the published image. The AI output contract
+(`shared/lib/ai/ai_client.js:179–199`) requests free-text causal conditions, not
+a versioned executable schema. Built-in archetypes also contain prose such as
+“MACD crosses below zero or trailing ATR stop reached”
+(`shared/lib/strategy/interval_discovery.js:100–106`). Those strings cannot safely
+be treated as JavaScript or assumed to specify fill timing, missing-feature
+behavior, crossing semantics or competing exit priority.
+
+Two materially different corrections require a deliberate domain decision:
+
+1. Restrict discovery to existing executable models and numeric settings; mark
+   rule text hypothesis-only and prohibit claiming arbitrary rule execution.
+   This is the smallest honest contract but does not implement custom AI rules.
+2. Define a bounded structured rule schema before implementing execution:
+   allowed fields/operators, entry fill timing, exits and their precedence,
+   holding-period units and missing-feature rejection. Human approval of these
+   trading invariants is required; never execute generated strings with `eval`.
+
+Neither path authorizes lowered gates or automatic promotion. No corrective
+image has been published while this behavior choice remains unresolved.
+
 ## 4. Rollback / Emergency Exit
 
 ```bash
