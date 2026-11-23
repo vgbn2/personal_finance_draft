@@ -2945,6 +2945,26 @@
       ]
     },
     {
+      "path": "docs/runbooks/github-test-ct.md",
+      "type": "how_to",
+      "audience": [
+        "operators",
+        "maintainers"
+      ],
+      "owner": "operations",
+      "status": "canonical",
+      "source_paths": [
+        "infra/docker/docker-compose.allinone.yml",
+        ".github/workflows/docker-publish.yml"
+      ],
+      "test_paths": [
+        "tests/scripts/architecture/cli/core/documentation_contract.test.js"
+      ],
+      "review_triggers": [
+        "github-image-test-deployment"
+      ]
+    },
+    {
       "path": "docs/runbooks/host-backup-diagnostics.md",
       "type": "how_to",
       "audience": [
