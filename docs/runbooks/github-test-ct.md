@@ -218,7 +218,7 @@ ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl stop sv-test-discov
 
 Retain records and journal evidence; no production runtime is involved.
 
-## Generated-rule execution: failed qualification
+## Generated-rule execution: failed qualification (old pinned image)
 
 An isolated differential probe against the published image on the same 30 real
 Yahoo SPY daily bars held the candidate model (`cnn_window_v0`), name, risk and
@@ -247,6 +247,29 @@ matching copies in CT104 container `/tmp/`. Output:
 `/tmp/opencode/runtime-goal/generated-rule-result.json`.
 Dataset SHA256:
 `34e589936ed97ff59919c2be273633fb45f1704655efe6776ef5a7c45d28501e`.
+
+### Follow-up: approved oracle correction and publication preparation
+
+The user approved changing the full-fixture open-position assertion from one to
+zero: the timeout exit leaves it flat and the last entry signal has no next bar.
+The separate four-bar prefix test still requires an unfinished position. All14
+rule tests now pass; no production lifecycle was changed to satisfy that oracle.
+An HTTP regression also proves a requested daily timeframe reaches the AI prompt,
+rejects an hourly response, and preserves an accepted daily response unchanged.
+
+`tools/operational/ct104_research.js` is the source-controlled, observation-only
+replacement for CT104's old `/opt/sovereign-test/periodic-discovery.js`. It requests
+SPY/daily semantics before synthesis instead of rewriting the generated interval,
+requires the structured-rule engine, and keeps Sharpe1.5/DD0.20/trades200 gates.
+Publication workflow now runs the real rule tests inside the image and supplies
+source revision/tree build arguments. Image publication and CT104 rollout require
+separate runtime evidence; local tests do not prove a deployed update.
+
+Before replacing CT104's container, stop its research timer/service, preserve its
+entire tiny storage/workspace plus compose/wrapper files, and retain the old image
+ID. No production host, broker credentials, or shared data mount is involved.
+Restore and hash-verify genuine history before re-enabling observation; never
+re-ingest or synthesize replacement data to hide loss during recreation.
 Run the staged harness inside the same image with
 `node /tmp/generated-rule-differential.js`; expected exit **1** until the rule
 execution contract is implemented. No orders, staging, YAML or AI calls are

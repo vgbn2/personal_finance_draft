@@ -37,6 +37,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      - name: Resolve source tree
+        id: source
+        run: echo "tree=$(git rev-parse HEAD^{tree})" >> "$GITHUB_OUTPUT"
+
       - name: Build All-in-One image for testing
         uses: docker/build-push-action@v7
         with:
@@ -44,6 +48,9 @@ jobs:
           file: infra/docker/Dockerfile.allinone
           load: true
           tags: sovereign-allinone:test
+          build-args: |
+            SOVEREIGN_SOURCE_REVISION=${{ github.sha }}
+            SOVEREIGN_SOURCE_TREE=${{ steps.source.outputs.tree }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,6 +106,14 @@ jobs:
           docker exec sv-allinone-test test -x /app/backend/cpp_core/build/sovereign_wealth
           echo "Checking Xvfb display server is running..."
           docker exec sv-allinone-test pgrep -f Xvfb
+
+      - name: Verify structured rule execution boundaries
+        run: |
+          docker cp tests sv-allinone-test:/app/tests
+          docker exec sv-allinone-test node --test \
+            tests/scripts/strategy/strategy_rules.test.js \
+            tests/scripts/strategy/strategy_rules_seams.test.js \
+            tests/scripts/strategy/strategy_rules_boundaries.test.js
 
       - name: Gracefully stop All-in-One container
         run: |
@@ -193,6 +208,9 @@ jobs:
           context: .
           file: infra/docker/Dockerfile.allinone
           push: true
+          build-args: |
+            SOVEREIGN_SOURCE_REVISION=${{ github.sha }}
+            SOVEREIGN_SOURCE_TREE=${{ steps.source.outputs.tree }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

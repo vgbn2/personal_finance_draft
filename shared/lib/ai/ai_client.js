@@ -183,13 +183,14 @@ ${familyRequirement}
 3. Indicators: Combine at least 2 distinct indicator families (e.g. Trend + Volatility, or Microstructure + Momentum).
 4. Signals: Return executable structured rules, not code or prose. Only features close, return_fast, return_slow, rsi, macd, atr, volatility, bollinger_upper, bollinger_middle, bollinger_lower exist. Operands are finite numbers or {"feature":"name"}. Comparisons: {"op":"gt|gte|lt|lte|crosses_above|crosses_below","left":operand,"right":operand}; groups: {"all":[conditions]} or {"any":[conditions]}. Maximum depth 4, total nodes 32, group children 1-8. No future data, arbitrary expressions or unknown fields. Missing features suppress decisions. Entry and exit use closed-bar features; orders fill next recorded open. Long-only, one position, conservative stop/gap priority, no same-bar re-entry. Unclosed positions stay open; realized metrics are NOT promotion qualified.
 5. Sizing & Risk: Sizing risk_weight in [0.01, 0.25], stop_loss_pct <= 0.05, max_holding_days in [1, 30].
+6. Timeframe: ${options.timeframe ? `Use exactly ${options.timeframe}; do not substitute another bar interval.` : 'Choose a supported bar interval.'}
 
 Output Format: Return strictly a single raw JSON object without markdown fences, matching:
 {
   "hypothesis": "Theoretical or empirical market edge thesis (2-3 sentences)",
   "family": "one of the canonical families",
   "archetype": "descriptive_snake_case_archetype",
-  "timeframe": "1h",
+  "timeframe": ${JSON.stringify(options.timeframe || '1h')},
   "universe": ["SPY"],
   "model": "cnn_window_v0",
   "indicators": { "rsi": true, "bollinger": true, "atr": true, "vwap": true },

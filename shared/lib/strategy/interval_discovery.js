@@ -601,6 +601,7 @@ async function generateAiCandidateSpec(options = {}) {
     const aiResult = await synthesizeStrategyWithAi(options);
     if (!aiResult) return null;
     validateRules(aiResult.rules);
+    if (options.timeframe && aiResult.timeframe !== options.timeframe) return null;
 
     const baseFamily = options.family || (CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
       ? aiResult.family

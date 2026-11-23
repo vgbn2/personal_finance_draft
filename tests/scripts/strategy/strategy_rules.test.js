@@ -65,7 +65,7 @@ test('rule decisions are causal and fills use the following recorded open', () =
   assert.deepEqual(before.features, after.features);
   const row = frame.features[30];
   assert.deepEqual(result.decisions[30].decision, evaluateRules(rules(), row, frame.features[29]));
-  assert.equal(result.open_positions.length, 1, 'unfinished final position must not be fabricated into a closed trade');
+  assert.equal(result.open_positions.length, 0, 'final entry signal has no following bar to fill after the recorded timeout exit');
 });
 
 test('unknown features/operators, nulls, deep trees and missing warm-up fail safely', () => {
