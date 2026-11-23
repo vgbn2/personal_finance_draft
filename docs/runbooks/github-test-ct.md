@@ -218,6 +218,47 @@ ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl stop sv-test-discov
 
 Retain records and journal evidence; no production runtime is involved.
 
+## Generated-rule execution: failed qualification
+
+An isolated differential probe against the published image on the same 30 real
+Yahoo SPY daily bars held the candidate model (`cnn_window_v0`), name, risk and
+costs constant, changing only entry/exit strings and recomputing each checksum.
+All three variants passed risk validation and returned identical complete
+evaluation summaries:
+
+| Rules | Trades | Sharpe | Net return |
+| --- | ---: | ---: | ---: |
+| Enter `close > 0`, exit `close < 0` | 5 | −17.6533 | −0.0761187 |
+| Enter `close < 0`, exit `close > 0` | 5 | −17.6533 | −0.0761187 |
+| Invalid syntax `INVALID_RULE_SYNTAX((` | 5 | −17.6533 | −0.0761187 |
+
+All recorded closes were positive. The deliberately non-passing qualification
+probe exited **1**, reporting `identical_evaluations:true` and
+`generated_rule_execution_qualified:false`. These are identical returned
+summaries, not an inspection of individual trade logs. Published
+`shared/lib/strategy/interval_discovery.js:865–878` passes name, model, threshold,
+horizon, cost, timeframe and engine to `runBacktest`, not entry/exit rules.
+Thus scheduled synthesis/model evaluation works, but arbitrary generated rule
+execution is **not qualified** and must not be described as working strategies.
+
+Reproducer and exact base candidate: local
+`/tmp/opencode/runtime-goal/generated-rule-{differential.js,base.json}`;
+matching copies in CT104 container `/tmp/`. Output:
+`/tmp/opencode/runtime-goal/generated-rule-result.json`.
+Dataset SHA256:
+`34e589936ed97ff59919c2be273633fb45f1704655efe6776ef5a7c45d28501e`.
+Run the staged harness inside the same image with
+`node /tmp/generated-rule-differential.js`; expected exit **1** until the rule
+execution contract is implemented. No orders, staging, YAML or AI calls are
+performed by this probe; it reads the recorded dataset and evaluates in memory.
+
+A positive control changing only holding horizon to one day produced **9 trades,
+Sharpe −10.369**, confirming evaluation responds to numeric inputs rather than
+returning a constant result. Independent source tracing confirmed model prediction
+drives entries and horizon drives exits (`shared/lib/strategy/backtest.js:764–795`);
+the C++ frame path serializes those predictions at lines 1033–1084. Textual rules
+instead feed YAML documentation (`interval_discovery.js:998–1000`).
+
 ## 4. Rollback / Emergency Exit
 
 ```bash
