@@ -4,6 +4,7 @@ const path = require('node:path');
 const A = require('../ui/ansi');
 const { modelCandidates, resolveModel } = require('../ml/models');
 const { STORAGE_DATA_DIR, STORAGE_TS_DIR } = require('../runtime/paths');
+const { validateRules, simulateRuleTrades } = require('./strategy_rules');
 const {
   ACCOUNT_TYPE_DEFAULTS,
   flattenRules,
@@ -761,7 +762,8 @@ function runBacktestJs(featureFrame, options = {}) {
   const to = options.to || null;
   const tailAlpha = options.tailAlpha != null ? options.tailAlpha : 0.05;
   const monteCarloRuns = options.monteCarloRuns != null ? options.monteCarloRuns : 200;
-  const model = resolveModel(modelName);
+  const ruleMode = Object.hasOwn(options, 'rules');
+  const model = ruleMode ? { name: 'structured_rules_v1' } : resolveModel(modelName);
   const byKey = new Map();
 
   const filteredFrame = filterFeatureFrame(featureFrame, { timeframe, from, to });
@@ -776,7 +778,15 @@ function runBacktestJs(featureFrame, options = {}) {
   const equityCurve = [{ timestamp: null, equity: 1 }];
   let equity = 1;
 
-  for (const rows of byKey.values()) {
+  const ruleResult = ruleMode ? simulateRuleTrades(filteredFrame, options) : null;
+  if (ruleResult) {
+    for (const trade of ruleResult.trades) {
+      trades.push(trade);
+      equity *= 1 + trade.net_return;
+      equityCurve.push({ timestamp: trade.exit_time, equity });
+    }
+  }
+  for (const rows of ruleResult ? [] : byKey.values()) {
     rows.sort((a, b) => Date.parse(a.as_of) - Date.parse(b.as_of));
     for (let i = 0; i + horizon < rows.length; i += horizon) {
       const prediction = model.predict(rows[i]);
@@ -851,7 +861,13 @@ function runBacktestJs(featureFrame, options = {}) {
     threshold,
     horizon,
     cost_bps: costBps,
-    engine: 'sovereign_js',
+    engine: ruleMode ? 'sovereign_js_rules_v1' : 'sovereign_js',
+    ...(ruleResult ? {
+      research_only: true,
+      decisions: ruleResult.decisions,
+      open_positions: ruleResult.open_positions,
+      metric_scope: 'realized_closed_trades_only_not_promotion_qualified',
+    } : {}),
     fee_bps: feeBps,
     slippage_bps: slippageBps,
     metrics: {
@@ -1102,6 +1118,13 @@ function runBacktestCppFrame(featureFrame, options) {
 }
 
 function runBacktest(featureFrame, options = {}) {
+  if (Object.hasOwn(options, 'rules')) {
+    validateRules(options.rules);
+    if (!featureFrame || !Array.isArray(featureFrame.features) || !featureFrame.features.length) {
+      throw new TypeError('Rule backtest requires OHLC feature data');
+    }
+    return withEngineProvenance(runBacktestJs(featureFrame, options), options.engine || 'auto', 'explicit_rule_research_route');
+  }
   // Fail closed if feature frame has no features or is invalid
   if (!featureFrame || !Array.isArray(featureFrame.features) || featureFrame.features.length === 0) {
     return {

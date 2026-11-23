@@ -9,6 +9,7 @@ const { REPO_ROOT, STORAGE_DATA_DIR, STORAGE_TS_DIR } = require('../runtime/path
 const { calculateRollingFeatureFrame, generateSampleBars } = require('../market/indicators');
 const { readTsIndex } = require('../market/validation');
 const { runBacktest } = require('./backtest');
+const { validateRules, createRuleFrame } = require('./strategy_rules');
 const { synthesizeStrategyWithAi } = require('../ai/ai_client');
 
 // ponytail: default candidate staging dir under local storage/data; add remote sync when multi-node is active.
@@ -450,6 +451,7 @@ function computeSpecChecksum(spec = {}) {
     indicator_periods: spec.indicator_periods || {},
     entry_signal: spec.entry_signal || '',
     exit_signal: spec.exit_signal || '',
+    ...(Object.hasOwn(spec, 'rules') ? { rules: spec.rules } : {}),
     cost_bps: spec.cost_bps ?? 5,
     risk: {
       risk_weight: spec.risk?.risk_weight ?? spec.risk_weight,
@@ -598,6 +600,7 @@ async function generateAiCandidateSpec(options = {}) {
   try {
     const aiResult = await synthesizeStrategyWithAi(options);
     if (!aiResult) return null;
+    validateRules(aiResult.rules);
 
     const baseFamily = options.family || (CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
       ? aiResult.family
@@ -646,6 +649,7 @@ async function generateAiCandidateSpec(options = {}) {
       model: aiResult.model || 'cnn_window_v0',
       timeframe,
       universe,
+      rules: aiResult.rules,
       indicators: (aiResult.indicators && typeof aiResult.indicators === 'object')
         ? aiResult.indicators
         : { rsi: true, return_fast: true, volatility: true },
@@ -783,6 +787,8 @@ function collectFallbackBars(optionsFixtureBars, symbols, timeframe, barCount) {
 }
 
 async function evaluateStrategy(spec, options = {}) {
+  const ruleMode = Object.hasOwn(spec, 'rules');
+  if (ruleMode) validateRules(spec.rules);
   let symbols = [];
   if (options.allMarkets || spec.universe === 'all' || (Array.isArray(spec.universe) && spec.universe.includes('all'))) {
     symbols = discoverAllMarketSymbols();
@@ -806,7 +812,7 @@ async function evaluateStrategy(spec, options = {}) {
   let allBars = [];
 
   // ponytail: fast C++ native multi-market backtesting directly loads binary snapshots (2.5s vs 9m JS feature loop).
-  if ((engineChoice === 'cpp_native' || engineChoice === 'auto') &&
+  if (!ruleMode && (engineChoice === 'cpp_native' || engineChoice === 'auto') &&
       bridge.backendAvailable() &&
       (!options.fixtureBars || options.fixtureBars.length === 0)) {
     try {
@@ -833,7 +839,15 @@ async function evaluateStrategy(spec, options = {}) {
   // If fast C++ native run did not succeed, fall back to feature frame backtest
   const isNativeSuccess = backtestResult && (backtestResult.metrics != null && backtestResult.ok !== false);
   if (!isNativeSuccess) {
-    allBars = collectFallbackBars(options.fixtureBars, symbols, timeframe, barCount);
+    allBars = ruleMode
+      ? (Array.isArray(options.fixtureBars)
+        ? [...options.fixtureBars]
+        : symbols.flatMap(symbol => readTsIndex(STORAGE_TS_DIR, symbol, timeframe) || []).slice(-barCount))
+      : collectFallbackBars(options.fixtureBars, symbols, timeframe, barCount);
+    if (ruleMode && (symbols.length !== 1 || allBars.length < 2
+      || allBars.some(bar => bar.symbol !== symbols[0] || bar.timeframe !== timeframe))) {
+      throw new TypeError('Rule research requires genuine history matching one symbol and timeframe');
+    }
 
     if (fromIso || toIso) {
       allBars = allBars.filter((b) => {
@@ -846,7 +860,7 @@ async function evaluateStrategy(spec, options = {}) {
     }
 
     const periods = spec.indicator_periods || {};
-    const frame = calculateRollingFeatureFrame(allBars, 2, {
+    const frame = ruleMode ? createRuleFrame(allBars, periods) : calculateRollingFeatureFrame(allBars, 2, {
       rsi: spec.indicators?.rsi ? (periods.rsi || 14) : undefined,
       atr: spec.indicators?.atr ? (periods.atr || 14) : undefined,
       bollinger: spec.indicators?.bollinger ? (periods.bollinger || 20) : undefined,
@@ -863,6 +877,7 @@ async function evaluateStrategy(spec, options = {}) {
     });
 
     backtestResult = runBacktest(frame, {
+      ...(ruleMode ? { rules: spec.rules } : {}),
       strategy: spec.name,
       model: spec.model || 'cnn_window_v0',
       threshold: spec.risk?.signal_threshold ?? spec.threshold ?? 0.60,
@@ -916,6 +931,11 @@ async function evaluateStrategy(spec, options = {}) {
     sortino_ratio: m.sortino_ratio || 0,
     win_rate: m.win_rate || 0,
     profit_factor: m.profit_factor ?? null,
+    ...(ruleMode ? {
+      research_only: true,
+      metric_scope: backtestResult.metric_scope,
+      open_positions: backtestResult.open_positions,
+    } : {}),
   };
 }
 
@@ -966,6 +986,7 @@ function queryMlMetaLabeling(options = {}) {
 }
 
 function formatStrategyYaml(spec, evaluation = {}, mlMeta = null) {
+  if (Object.hasOwn(spec, 'rules')) validateRules(spec.rules);
   const name = spec.name;
   const archetype = spec.archetype || 'custom';
   const family = spec.family || 'momentum';
@@ -987,11 +1008,12 @@ kind: ${family}
 family: ${family}
 lane: single_asset
 role: strategy
-status: active
-enabled: true
+status: ${Object.hasOwn(spec, 'rules') ? 'research_only' : 'active'}
+enabled: ${Object.hasOwn(spec, 'rules') ? 'false' : 'true'}
 model: ${model}
 timeframe: ${timeframe}
 sections:
+${Object.hasOwn(spec, 'rules') ? `  rules_json: ${JSON.stringify(spec.rules)}\n` : ''}\
   hypothesis: ${JSON.stringify(spec.hypothesis || `Quantitative alpha hypothesis for ${archetype}`)}
   universe:
 ${univList}
@@ -1064,6 +1086,10 @@ ${spec.ai_generated ? `  synthesis:
 
 function stageCandidate(candidate, options = {}) {
   const spec = candidate.spec || candidate;
+  if (Object.hasOwn(spec, 'rules')) {
+    validateRules(spec.rules);
+    return { staged: false, reason: 'rule_execution_research_only' };
+  }
   const validation = validateRiskBounds(spec, options.bounds);
   if (!validation.valid) {
     return {
@@ -1243,8 +1269,9 @@ class IntervalStrategyEngine {
           this.log(`[INTERVAL-DISCOVERY] [AI-AGENT: ${aiSpec.ai_model || 'ag/gemini-3.8-flash'}] Synthesized: ${aiSpec.name}`);
           return aiSpec;
         }
+        throw new Error('AI did not return valid executable strategy rules');
       } catch (err) {
-        this.log(`[INTERVAL-DISCOVERY] AI generation failed, falling back to algorithmic: ${err.message}`);
+        throw new Error(`AI rule discovery failed without model fallback: ${err.message}`);
       }
     }
 

@@ -284,6 +284,66 @@ image has been published while this behavior choice remains unresolved.
 
 ## 4. Rollback / Emergency Exit
 
+### 2026-11-23 local rule correction — partial, not deployed
+
+Structured `rules.version: 1` now flows from AI JSON into discovery, checksum,
+validated feature decisions and the JS research simulator. This replaces neither
+legacy model strategies nor broker execution. It is a checklist that now reaches
+the simulator instead of being replaced by the default model at the next desk.
+
+- Owner: `shared/lib/strategy/strategy_rules.js`. Finite feature comparisons,
+  crossings and bounded `all`/`any` groups only; no generated JavaScript execution.
+- One symbol/timeframe, long-only, one position, next-open entry/exit, conservative
+  gap stops and stop-first ambiguous bars, two-sided costs and bar-count timeout.
+- Raw OHLC is validated before indicators; missing/mismatched genuine data rejects.
+  Rule research does not use the legacy loader that can relabel BTC fixture data.
+- Binary-store latest observations share the same rule/feature owner. They emit
+  zero executable trade logs. Rule staging and generic CLI portfolio backtests
+  reject; YAML exports are disabled and marked `research_only`.
+- Realized-only metrics exclude open-position portfolio risk and are explicitly
+  not promotion-qualified. No holdout sufficiency or live AI quality is proved.
+
+Verification: 100 recorded Binance bars distinguish always-enter **14 trades**
+from never-enter **0 trades**. Local HTTP response testing covers actual
+HTTP/JSON → AI spec → rules → backtest, not a live model. Binary codec/latest
+decision parity, dataset identity and invalid raw prices were also exercised.
+
+Combined rule tests: **13 passed, 1 failed**. The failing assertion at
+`tests/scripts/strategy/strategy_rules.test.js:68` incorrectly requires one open
+position at the end of the full fixture. Actual timeout exit is 09:00 UTC; final
+10:00 entry has no following bar, so flat is correct. The assertion is preserved
+pending explicit approval to correct the test, not production behavior. A bounded
+four-bar prefix separately verifies retention of an actually unfinished position.
+
+Legacy focused tests: **23 passed**. Structure runner completed successfully;
+anti-cheat reported **0 strikes**, YAGNI passed. Classifier reports six legacy
+owner-placement warnings; no rule-owner warning. Full patches and raw logs:
+`/tmp/opencode/runtime-goal/rule-execution-D1-complete.patch` and
+`/tmp/opencode/runtime-goal/rule-D1-tests.log`.
+
+No new image, CT104 replacement, production change or credential operation was
+performed for this local correction. Deployment remains blocked.
+
+#### 1. Inspection / Probe
+
+```bash
+git diff --stat # inspect tracked local scope; untracked rule files are additional
+```
+
+#### 2. Remediation
+
+No operational command: local source is implemented; do not deploy the failing batch.
+
+#### 3. Verification
+
+```bash
+node --test tests/scripts/strategy/strategy_rules.test.js tests/scripts/strategy/strategy_rules_seams.test.js tests/scripts/strategy/strategy_rules_boundaries.test.js # full gate; currently expected exit 1
+```
+
+#### 4. Rollback
+
+Leave the running image pinned. Do not reset the shared worktree or remove evidence.
+
 ```bash
 ssh -o BatchMode=yes delloptiplex 'pct shutdown 104 --timeout 30' # stop only test CT; retain disks and diagnostic evidence
 ```

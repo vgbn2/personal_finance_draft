@@ -179,9 +179,9 @@ async function synthesizeStrategyWithAi(options = {}) {
   const userPrompt = `Synthesize a strategy hypothesis and declarative quantitative specification.
 Constraint Checklist:
 ${familyRequirement}
-2. Universe: Dynamic multi-asset selection (no hardcoded single symbol, 2-5 liquid assets from SPY, QQQ, AAPL, MSFT, NVDA, BTCUSDT, ETHUSDT).
+2. Universe: Choose exactly one liquid symbol for this research-only rules engine. Respect an explicitly requested universe: ${JSON.stringify(options.universe || null)}.
 3. Indicators: Combine at least 2 distinct indicator families (e.g. Trend + Volatility, or Microstructure + Momentum).
-4. Signals: Define explicit causal entry signal (Present: t <= T) and exit barrier rules (Future: t > T).
+4. Signals: Return executable structured rules, not code or prose. Only features close, return_fast, return_slow, rsi, macd, atr, volatility, bollinger_upper, bollinger_middle, bollinger_lower exist. Operands are finite numbers or {"feature":"name"}. Comparisons: {"op":"gt|gte|lt|lte|crosses_above|crosses_below","left":operand,"right":operand}; groups: {"all":[conditions]} or {"any":[conditions]}. Maximum depth 4, total nodes 32, group children 1-8. No future data, arbitrary expressions or unknown fields. Missing features suppress decisions. Entry and exit use closed-bar features; orders fill next recorded open. Long-only, one position, conservative stop/gap priority, no same-bar re-entry. Unclosed positions stay open; realized metrics are NOT promotion qualified.
 5. Sizing & Risk: Sizing risk_weight in [0.01, 0.25], stop_loss_pct <= 0.05, max_holding_days in [1, 30].
 
 Output Format: Return strictly a single raw JSON object without markdown fences, matching:
@@ -190,13 +190,19 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
   "family": "one of the canonical families",
   "archetype": "descriptive_snake_case_archetype",
   "timeframe": "1h",
-  "universe": ["SPY", "QQQ"],
+  "universe": ["SPY"],
   "model": "cnn_window_v0",
   "indicators": { "rsi": true, "bollinger": true, "atr": true, "vwap": true },
   "indicator_periods": { "rsi": 14, "atr": 14, "bollinger": 20 },
   "risk": { "risk_weight": 0.10, "stop_loss_pct": 0.03, "take_profit_pct": 0.06, "max_holding_days": 5, "signal_threshold": 0.60 },
   "entry_signal": "causal entry trigger condition",
-  "exit_signal": "exit barrier or timeout condition"
+  "exit_signal": "description of the executable exit",
+  "rules": {
+    "version": 1,
+    "entry": {"op":"gt","left":{"feature":"rsi"},"right":50},
+    "exit": {"op":"lt","left":{"feature":"rsi"},"right":50},
+    "execution": {"max_holding_bars":5,"stop_loss_pct":0.03,"take_profit_pct":0.06,"position_size_pct":0.10}
+  }
 }`;
 
   const response = await ask(userPrompt, systemPrompt);

@@ -452,6 +452,11 @@ async function commandBacktest(args) {
   if (strategyPath) {
     const { inspectStrategyFile } = require('../strategies/strategy.js');
     strategyMeta = inspectStrategyFile(strategyPath);
+    if (Object.hasOwn(strategyMeta, 'rules')) {
+      const error = 'Rule strategies are research-only; use interval discovery evaluation. CLI portfolio qualification is not supported.';
+      console.error(hasFlag(args, '--json') ? JSON.stringify({ error }) : error);
+      return 1;
+    }
     if (!strategyMeta.exists) {
       console.warn(`\x1b[1;33m[WARNING]\x1b[0m Strategy file not found: ${strategyPath}. Using defaults.`);
     }

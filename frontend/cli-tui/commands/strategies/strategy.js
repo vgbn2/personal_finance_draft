@@ -12,6 +12,7 @@ const { DEFAULT_PROVIDER_PRIORITY } = require('../../../../shared/lib/market/quo
 const { filterFeatureFrame, runBacktest, splitFeatureFrame } = require('../../../../shared/lib/strategy/backtest.js');
 const { calculateFeatureFrame, calculateRollingFeatureFrame, DEFAULT_PERIODS, generateSampleBars } = require('../../../../shared/lib/market/indicators.js');
 const { compareModels, resolveModel } = require('../../../../shared/lib/ml/models.js');
+const { validateRules, createRuleFrame, evaluateRules } = require('../../../../shared/lib/strategy/strategy_rules.js');
 const { mergeSnapshots, readSnapshot, validateSnapshot, writeJson, writeTsIndex, readTsIndex, readTsIndexSince } = require('../../../../shared/lib/market/validation.js');
 const { rollupFromBase } = require('../data/data_rollup.js');
 const { parseTimeframeMs } = require('../../../../backend/scripts/data_ops/ingest_market_data/constants.js');
@@ -252,8 +253,32 @@ async function applyOnnxPrediction(model, latestFeature) {
   }
 }
 
-async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold = 0.55 }) {
+async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold = 0.55, tsDir = STORAGE_TS_DIR }) {
   const universe = Array.isArray(strategy.universe) ? strategy.universe : [];
+  if (Object.hasOwn(strategy, 'rules')) {
+    validateRules(strategy.rules);
+    const decisions = [];
+    for (const symbol of universe) {
+      const bars = readTsIndex(tsDir, symbol, timeframe) || [];
+      const frame = createRuleFrame(bars, strategy.indicator_periods || {});
+      const row = frame.features.at(-1);
+      decisions.push({
+        symbol,
+        as_of: row?.as_of || null,
+        decision: evaluateRules(strategy.rules, row, frame.features.at(-2)),
+      });
+    }
+    // Rule decisions are observable, but broker position/exit parity is not yet qualified.
+    return {
+      status: 'rule_execution_research_only',
+      research_only: true,
+      trade_logs: [],
+      trades: 0,
+      decisions,
+      strategy: strategy.name,
+      timeframe,
+    };
+  }
   const tradeLogs = [];
   const model = resolveModel(strategy.model);
   const periods = {
@@ -266,7 +291,7 @@ async function deriveLiveStrategySignal({ strategy, timeframe = '1d', threshold 
   };
 
   for (const symbol of universe) {
-    const allBars = readTsIndex(STORAGE_TS_DIR, symbol, timeframe) || [];
+    const allBars = readTsIndex(tsDir, symbol, timeframe) || [];
     const bars = allBars.slice(-200); // 200-bar lookback pruning
     if (bars.length < 21) {
       console.log(`[FAST_PATH] Insufficient history for ${symbol}:${timeframe} (${bars.length} bars < 21)`);
@@ -603,6 +628,7 @@ async function obtainStrategyReport(strategy, strategyTimeframe, thresholdToUse,
       threshold: thresholdToUse,
     });
   } catch (err) {
+    if (Object.hasOwn(strategy, 'rules')) throw err;
     console.warn(`[AUTOMATION] Fast-path signal derivation error for ${strategy.name}: ${err.message}. Falling back to backtest.`);
     return await fallbackBacktestSignal(strategy, strategyTimeframe, thresholdToUse, universeArgs);
   } finally {
@@ -1305,4 +1331,3 @@ async function commandPropFirmMenu(args) {
 module.exports = {
   slugifyStrategyName, get_Current_Universe_Symbols, buildStrategyPlan, getStrategyRegistryPath, getStrategyDirectory, readStrategyRegistry, listStrategyFiles, strategySectionPresent, inspectStrategyFile, syncStrategyRegistry, strategyRegistryReport, registeredStrategyOptions, writeStrategyRegistry, interactiveStrategyWizard, commandPropFirmProfiles, commandStrategy, commandStrategyMenu, commandPropFirmMenu, runAutomatedStrategies, runAutomationPass, buildAutomationTrustDecision, buildStrategySizingDecision, deriveLiveStrategySignal
 };
-

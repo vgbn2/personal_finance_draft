@@ -163,6 +163,9 @@ function parseStrategyYaml(text) {
     risk:              asObj(sec.risk),
     indicators:        asObj(sec.indicators),
     indicator_periods: asObj(sec.indicator_periods),
+    ...(Object.hasOwn(sec, 'rules_json')
+      ? { rules: JSON.parse(sec.rules_json) }
+      : Object.hasOwn(sec, 'rules') ? { rules: sec.rules } : {}),
     features: {
       technical: asArray(rawFeatures.technical),
       relative:  asArray(rawFeatures.relative),
@@ -253,6 +256,7 @@ function inspectStrategyFile(filePath, options = {}) {
     features: yaml.features,
     indicators: yaml.indicators,
     indicator_periods: yaml.indicator_periods,
+    ...(Object.hasOwn(yaml, 'rules') ? { rules: yaml.rules } : {}),
     grade: gradeRecord.grade,
     score: gradeRecord.score,
     verdict: gradeRecord.verdict,
