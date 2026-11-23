@@ -115,6 +115,86 @@ roughly 76 seconds apart with unchanged Sharpe-gate rejections. That is observed
 production discovery cadence, separate from CT104's two bounded evaluations;
 neither proves long-term soak, promotion or profitable trading.
 
+## Research-only periodic discovery in CT104
+
+The host-managed `sv-test-discovery.timer` invokes a oneshot service five seconds
+after activation, then 90 seconds after each completed invocation. Systemd does
+not overlap activations of this same service. Each invocation uses the published
+image's generator and evaluator through `docker exec`; no application image is
+rebuilt. Deployment scripts live under `/opt/sovereign-test/` in CT104.
+
+The actual container worker also holds a nonblocking `flock` and runs under a
+150-second `timeout` with a five-second kill grace, shorter than the host service's
+180-second timeout. This guards against abandoned `docker exec` workers surviving
+host-client termination. Lock exclusion and inner timeout were exercised directly.
+
+The wrapper constrains evaluation to the recorded Yahoo SPY daily dataset,
+recomputes the final spec checksum, and mirrors the published CLI's ordered
+quality predicates: Sharpe ≥1.50, drawdown ≤0.20, trades ≥200. It does **not**
+call the stager, YAML writer, execution adapter or promotion path. These mirrored
+checks must not be represented as executing the stager itself. AI failure is
+nonzero, never replaced with an algorithmic fallback.
+
+Each successful research invocation atomically publishes a complete record to
+`/var/lib/sovereign-test/discovery/` **outside the Docker container**. Rejected
+candidates are retained with their input fingerprint, full final spec, metrics,
+gate results and explicit `promotion:false` / `broker_orders:false`. Service
+errors remain in the systemd journal; a pending partial record is removed.
+The host flushes the completed file before rename and its directory afterwards.
+These records survive application-container recreation, although the input
+dataset still needs reingestion after recreation.
+
+### 1. Inspection / Probe
+
+```bash
+ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl list-timers sv-test-discovery.timer --no-pager' # inspect next scheduled activation
+ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- journalctl -u sv-test-discovery.service -n 30 --no-pager' # bounded recent run outcomes, no env dump
+```
+
+### 2. Remediation / Action
+
+```bash
+ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl start sv-test-discovery.timer' # resume existing isolated research schedule
+```
+
+### 3. Verification / Proof
+
+Require three timer-triggered records with distinct run IDs and spec checksums,
+recomputed fingerprint equality, identical quality thresholds, real input bars,
+no staging/promotion/order invocation, and unchanged application YAML inventory.
+Thirty bars cannot qualify a strategy against a 200-trade minimum. The returned
+engine is recorded; fallback must not be described as forced native execution.
+The evaluator's model-based simulation does not establish that arbitrary
+AI-generated entry/exit text is executable trading logic.
+
+Observed timer-triggered completion evidence (2026-11-23 UTC):
+
+| Completion | Final spec checksum prefix | Trades | Sharpe | Decision |
+| --- | --- | ---: | ---: | --- |
+| 05:48:40.953 | `bcb6e664ecbb` | 5 | −17.6533 | Sharpe below threshold |
+| 05:50:31.041 | `117c25b06a23` | 5 | −17.6533 | Sharpe below threshold |
+| 05:52:25.880 | `8c9564d052ca` | 5 | −13.0311 | Sharpe below threshold |
+
+The matching-image verifier returned `verified_records:3`,
+`distinct_checksums:3`, `gates_unchanged:true`, `staging_invoked:false` and
+recomputed the recorded gate decisions from actual metrics. All returned engine
+`sovereign_cpp_core`. Automated YAML inventory remained 108 files with SHA256
+`51e96affadb460b30db1baf9f0e9562c3f4db1a2fd75ca922767bfc8363c9b5d`;
+the normal candidate staging directory remained absent. Full scripts, records,
+journal and verifier output are under `/tmp/opencode/runtime-goal/` locally;
+the operational wrapper and durable records are in CT104 at the paths above.
+The timer remains enabled. This proves scheduled research/dataflow, not strategy
+profitability, live execution, arbitrary signal-code execution or long-term soak.
+
+### 4. Rollback / Emergency Exit
+
+```bash
+ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl disable --now sv-test-discovery.timer' # prevent future calls and quota use
+ssh -o BatchMode=yes delloptiplex 'pct exec 104 -- systemctl stop sv-test-discovery.service' # terminate a current research invocation if necessary
+```
+
+Retain records and journal evidence; no production runtime is involved.
+
 ## 4. Rollback / Emergency Exit
 
 ```bash
