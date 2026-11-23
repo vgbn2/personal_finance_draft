@@ -186,6 +186,29 @@ the operational wrapper and durable records are in CT104 at the paths above.
 The timer remains enabled. This proves scheduled research/dataflow, not strategy
 profitability, live execution, arbitrary signal-code execution or long-term soak.
 
+### Default-path readiness follow-up
+
+The earlier default-path 503 is resolved. Published the existing genuine Yahoo
+snapshot to `storage/data/cache/last_fetch.json` using an exclusive temporary
+copy and rename, refusing to replace an existing default file. Publication
+asserted all 30 rows were Yahoo/SPY and preserved the entire source byte-for-byte,
+including `snapshot_scope.kind: scoped` and
+`representative_of_global_live_health: false`. Normal CLI validation accepted
+30/30 records, zero rejected/provider errors, with 30 freshness warnings retained.
+
+Actual default `/api/status`, **without any input query parameter**, then returned:
+
+```json
+{"authenticated":false,"http":401,"ok":false}
+{"authenticated":true,"http":200,"ok":true,"snapshot":{"path":"/app/storage/data/cache/last_fetch.json","exists":true,"bytes":20326}}
+```
+
+This establishes genuine-data default-path readiness, **not global live-feed
+coverage**. Unfiltered ingest's dry-run planned 2,950 fetches; that broad workload
+was not launched just to make a presence check pass. The published CLI also
+supports explicit default output for normal provider backfill if new data is
+required; do not seed synthetic fixtures or relabel scoped history as global.
+
 ### 4. Rollback / Emergency Exit
 
 ```bash
