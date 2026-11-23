@@ -380,6 +380,9 @@ test('interval discovery: stageCandidate enforces metric thresholds before disk 
 
   // 6. IntervalStrategyEngine runCycle enforces minSharpe barrier
   const engine = new IntervalStrategyEngine({
+    archetype: 'ema_macd_trend',
+    universe: ['BTCUSDT'],
+    fixtureBars: require('../../fixtures/real_bars_btc.json').sources,
     intervalSecs: 1,
     candidatesDir: tmpCandidates,
     yamlDir: tmpYaml,
@@ -401,6 +404,9 @@ test('interval discovery: IntervalStrategyEngine executes cycle against local fi
   t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
   const engine = new IntervalStrategyEngine({
+    archetype: 'ema_macd_trend',
+    universe: ['BTCUSDT'],
+    fixtureBars: require('../../fixtures/real_bars_btc.json').sources,
     intervalSecs: 1,
     candidatesDir: tmpDir,
     yamlDir: tmpDir,

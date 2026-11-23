@@ -270,6 +270,33 @@ entire tiny storage/workspace plus compose/wrapper files, and retain the old ima
 ID. No production host, broker credentials, or shared data mount is involved.
 Restore and hash-verify genuine history before re-enabling observation; never
 re-ingest or synthesize replacement data to hide loss during recreation.
+
+Broader-suite follow-up found two legacy fixture tests called live AI and then
+expected rule strategies to stage. They now select `ema_macd_trend` and the recorded
+BTC fixture explicitly; metric, disk-write and staging assertions are unchanged.
+Both pass. The live AI nullable smoke test remains distinct from offline proof;
+do not report the first broad run (19pass/2fail) as green.
+
+### GitHub build dependency blocker and approved fallback
+
+Run [45218229378](https://github.com/vgbn2/personal_finance_draft/actions/runs/45218229378)
+failed before container tests: ONNX1.17.1 upstream archive404. API probes for the
+upstream repository/releases also returned404; no version upgrade was inferred.
+The operator approved reusing the exact existing deployment artifact, published
+as a non-latest dependency prerelease
+[`sv-dependency-onnx-1.17.1`](https://github.com/vgbn2/personal_finance_draft/releases/tag/sv-dependency-onnx-1.17.1).
+
+- Source image: `sha256:c37f7774d70e72884c5b90c923fd5a48d2399849b96ca4647aafe82ed96312a1`.
+- Original library SHA256: `a34d8c226994dd4af2b2250442fc236ebba97aefc7ec451c35a86216588d2f69`.
+- Repacked archive SHA256: `c389a5f69a57dfc798dde1170fc81184b594c4fb03c36f48ad1d4a746e1f71f8`.
+- Headers, original license and third-party notices retained. Extracted from a
+  newly created but never started network-disabled container; production unchanged.
+- This is recovered deployment provenance, **not independent upstream signature
+  verification**. ONNX stays enabled; linkage is not actual model inference proof.
+
+The build workflow must create `/tmp/opencode` as the container's normal user
+before the rule gate. Independent fresh-tmp reproduction failed12/2 without it
+and passed14/0 with it. This test-environment setup does not alter assertions.
 Run the staged harness inside the same image with
 `node /tmp/generated-rule-differential.js`; expected exit **1** until the rule
 execution contract is implemented. No orders, staging, YAML or AI calls are
