@@ -15,12 +15,14 @@ export interface AlpacaAdapterOptions {
 export class AlpacaAdapter implements BrokerAdapter {
   private alpaca: any;
   private readonly simulateIfMissingCredentials: boolean;
+  private readonly paper: boolean;
 
   constructor(options: AlpacaAdapterOptions = {}) {
     const settings = resolveAlpacaSettings(process.env, options);
     const keyId = settings.keyId;
     const secretKey = settings.secretKey;
     const paper = settings.paper;
+    this.paper = paper;
     this.simulateIfMissingCredentials = options.simulateIfMissingCredentials ?? false;
 
     if (options.client) {
@@ -162,6 +164,15 @@ export class AlpacaAdapter implements BrokerAdapter {
     }
     await this.alpaca.trading.orders.deleteOrderByOrderID({ orderId });
     return true;
+  }
+
+  async getAccountNamespace(): Promise<string> {
+    if (!this.hasCredentials()) throw new Error('Authenticated Alpaca account required');
+    const account = await this.alpaca.trading.account.getAccount();
+    if (typeof account?.id !== 'string' || !account.id.trim() || account.id.includes(':')) {
+      throw new Error('Malformed Alpaca account ID');
+    }
+    return 'alpaca:' + (this.paper ? 'paper' : 'live') + ':' + account.id;
   }
 
   async getOrder(orderId: string) {

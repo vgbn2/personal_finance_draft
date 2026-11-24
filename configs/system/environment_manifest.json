@@ -514,6 +514,11 @@
           "profiles": ["developer"],
           "allowed_surfaces": ["process_internal"]
         },
+        {
+          "name": "SEARXNG_ENV_FILE",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
         {"name": "APPDATA"},
         {"name": "CI"},
         {"name": "DISABLE_HMR"},

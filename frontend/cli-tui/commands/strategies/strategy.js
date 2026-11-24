@@ -156,10 +156,13 @@ function recordSubPositionTrade(tradeType, lastTrade, strategy, qty, currentPric
 function maybeRecordAlpacaPaperEntry(providerPaper, tradeType, lastTrade, qty, strategy, currentPrice, strategyTimeframe, reservation, signalId) {
   if (!providerPaper || tradeType !== 'buy') return 0;
   const { fetchAlpacaPositions, recordAlpacaEntry } = require('../../../../shared/lib/runtime/alpaca_bot_cycle.js');
-  const brokerInventory = fetchAlpacaPositions(false);
+  const brokerInventory = fetchAlpacaPositions(false, { paperProvider: true });
   const brokerPosition = brokerInventory.positions.find((position) => position.symbol === lastTrade.symbol);
   if (brokerInventory.status === 'confirmed' && brokerPosition) {
-    recordAlpacaEntry({ symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false, timeframe: strategyTimeframe });
+    recordAlpacaEntry(
+      { symbol: lastTrade.symbol, qty, strategy, requestedPrice: currentPrice, live: false, timeframe: strategyTimeframe },
+      { paperProvider: true }
+    );
     if (reservation) updateAlpacaPaperEntryIntent(signalId, 'confirmed');
     return 1;
   }

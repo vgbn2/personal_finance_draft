@@ -166,29 +166,151 @@ function saveSubPositionsLedger(ledger, filePath = DEFAULT_LEDGER_PATH) {
  * @param {string} [filePath=DEFAULT_LEDGER_PATH]
  * @returns {Object} the recorded sub-position
  */
+// Account namespace is supplied by the gateway's authenticated adapter, never
+// inferred here. No unnamespaced mutation or automatic legacy migration exists.
+function validateNamespace(namespace) {
+  if (typeof namespace !== 'string' || !/^alpaca:(paper|live):[A-Za-z0-9][A-Za-z0-9_-]*$/.test(namespace) ||
+      ['__proto__', 'prototype', 'constructor'].includes(namespace.split(':')[2])) {
+    throw new Error('Authenticated Alpaca account namespace required');
+  }
+  return namespace;
+}
+
+function safeKey(value) {
+  return typeof value === 'string' && value.trim() === value && value.length > 0 &&
+    !['__proto__', 'prototype', 'constructor'].includes(value);
+}
+
+function plainRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) &&
+    [Object.prototype, null].includes(Object.getPrototypeOf(value)) && Object.keys(value).every(safeKey);
+}
+
+function validatePlan(allocations, quantity, filled = 0) {
+  if (!Array.isArray(allocations) || !allocations.length || allocations.some((item) =>
+    !plainRecord(item) || !safeKey(item.strategyId) || !Number.isFinite(item.quantity) || item.quantity <= 0
+  ) || new Set(allocations.map((item) => item.strategyId)).size !== allocations.length ||
+      Math.abs(allocations.reduce((sum, item) => sum + item.quantity, 0) - quantity) > 1e-8) {
+    throw new Error('Invalid ordered allocation plan');
+  }
+  let remaining = filled;
+  for (const item of allocations) {
+    const expected = Math.min(remaining, item.quantity);
+    if (item.filled_qty !== undefined && (!Number.isFinite(item.filled_qty) ||
+        item.filled_qty < 0 || Math.abs(item.filled_qty - expected) > 1e-8)) {
+      throw new Error('Invalid allocation watermark');
+    }
+    remaining -= expected;
+  }
+}
+
+function validateAccount(account, namespace) {
+  if (!plainRecord(account) || !plainRecord(account.positions) || !Array.isArray(account.history) ||
+      !plainRecord(account.pending_orders)) throw new Error('Invalid account ledger schema');
+  for (const [symbol, rows] of Object.entries(account.positions)) {
+    if (!Array.isArray(rows) || rows.some((row) => !plainRecord(row) || row.symbol !== symbol ||
+      !safeKey(row.strategy_id) || !Number.isFinite(row.quantity) || row.quantity <= 0 ||
+      !Number.isFinite(row.entry_price) || row.entry_price <= 0 || row.status !== 'open')) {
+      throw new Error('Invalid account holdings schema');
+    }
+  }
+  if (account.history.some((row) => !plainRecord(row))) throw new Error('Invalid account history schema');
+  for (const [clientId, pending] of Object.entries(account.pending_orders)) {
+    if (!plainRecord(pending) || pending.client_id !== clientId || pending.account_namespace !== namespace ||
+        !safeKey(pending.symbol) || !['buy', 'sell'].includes(pending.side) ||
+        !Number.isFinite(pending.quantity) || pending.quantity <= 0 ||
+        !Number.isFinite(pending.filled_qty) || pending.filled_qty < 0 || pending.filled_qty > pending.quantity ||
+        !Number.isFinite(pending.filled_notional) || pending.filled_notional < 0 ||
+        typeof pending.terminal !== 'boolean' || typeof pending.status !== 'string' ||
+        !(pending.order_id === null || safeKey(pending.order_id))) {
+      throw new Error('Invalid account pending schema');
+    }
+    validatePlan(pending.allocations, pending.quantity, pending.filled_qty);
+    if (pending.allocations.some((item) => item.filled_qty === undefined)) {
+      throw new Error('Missing persisted allocation watermark');
+    }
+  }
+}
+
+function selectAccount(root, namespace) {
+  validateNamespace(namespace);
+  if (!plainRecord(root.positions) || !Array.isArray(root.history) ||
+      (root.pending_orders !== undefined && !plainRecord(root.pending_orders))) {
+    throw new Error('Invalid root ledger schema');
+  }
+  if (Object.keys(root.positions).length || root.history.length || Object.keys(root.pending_orders || {}).length) {
+    throw new Error('Legacy ledger quarantined until explicit account mapping');
+  }
+  if (root.accounts !== undefined && !plainRecord(root.accounts)) throw new Error('Invalid accounts schema');
+  for (const [key, account] of Object.entries(root.accounts || {})) {
+    validateNamespace(key);
+    validateAccount(account, key);
+  }
+  return Object.hasOwn(root.accounts || {}, namespace)
+    ? root.accounts[namespace]
+    : { positions: {}, history: [], pending_orders: {} };
+}
+
+/** Read a validated account partition; legacy records throw, never become zero holdings. */
+function loadAccountLedger(filePath = DEFAULT_LEDGER_PATH, namespace) {
+  return selectAccount(loadSubPositionsLedger(filePath), namespace);
+}
+
+function mutateAccount(filePath, namespace, update) {
+  return withFileLockSync(`${filePath}.lock`, () => {
+    const root = loadSubPositionsLedger(filePath);
+    const account = selectAccount(root, namespace);
+    const result = update(account);
+    root.accounts ||= {};
+    root.accounts[namespace] = account;
+    saveSubPositionsLedger(root, filePath);
+    return result;
+  });
+}
+
+/** order: accountNamespace, clientOrderId, instrumentId, side, quantity,
+ * allocations: [{strategyId, quantity}] in caller-approved persisted order.
+ * All mutations share the existing file lock across every account partition.
+ */
 function beginPendingOrder(order, filePath = DEFAULT_LEDGER_PATH) {
-  const symbol = String(order.instrumentId || '').toUpperCase();
-  const quantity = Number(order.quantity);
+  if (!plainRecord(order)) throw new Error('Invalid pending order');
+  validateNamespace(order.accountNamespace);
+  const symbol = typeof order.instrumentId === 'string' ? order.instrumentId.toUpperCase() : '';
+  const quantity = order.quantity;
   const clientId = order.clientOrderId;
-  if (!symbol || !clientId || !['buy', 'sell'].includes(order.side) || !Number.isFinite(quantity) || quantity <= 0) {
+  if (!safeKey(symbol) || !safeKey(clientId) || !['buy', 'sell'].includes(order.side) ||
+      !Number.isFinite(quantity) || quantity <= 0 ||
+      (order.providerPaper !== undefined && order.providerPaper !== (order.accountNamespace.split(':')[1] === 'paper'))) {
     throw new Error('Invalid pending order');
   }
-  return withFileLockSync(`${filePath}.lock`, () => {
-    const ledger = loadSubPositionsLedger(filePath);
-    ledger.pending_orders ||= {};
+  validatePlan(order.allocations, quantity);
+  if (order.allocations.some((item) => item.filled_qty !== undefined && item.filled_qty !== 0)) {
+    throw new Error('New allocation plan cannot contain fills');
+  }
+  return mutateAccount(filePath, order.accountNamespace, (ledger) => {
     if (Object.hasOwn(ledger.pending_orders, clientId) || Object.values(ledger.pending_orders).some(
       (item) => !item.terminal && item.symbol === symbol
-    )) {
-      throw new Error('Existing pending order requires reconciliation before submission');
+    )) throw new Error('Existing pending order requires reconciliation before submission');
+    if (order.side === 'sell') {
+      for (const allocation of order.allocations) {
+        const available = (ledger.positions[symbol] || []).filter((row) => row.strategy_id === allocation.strategyId)
+          .reduce((sum, row) => sum + row.quantity, 0);
+        if (available + 1e-8 < allocation.quantity) throw new Error('Exit plan exceeds attributed holdings');
+      }
     }
     const pending = {
       client_id: clientId,
+      account_namespace: order.accountNamespace,
+      allocations: order.allocations.map((item) => ({
+        strategyId: item.strategyId,
+        quantity: item.quantity,
+        filled_qty: 0,
+      })),
       order_id: null,
       symbol,
       side: order.side,
       quantity,
-      strategy_id: order.strategyId || order.strategy || 'manual',
-      source: order.source || (order.strategyId || order.strategy ? 'bot' : 'manual'),
+      source: order.source || 'bot',
       timeframe: order.timeframe || '1m',
       confidence: order.confidence ?? 1,
       submitted_at: order.submittedAt || new Date().toISOString(),
@@ -196,34 +318,36 @@ function beginPendingOrder(order, filePath = DEFAULT_LEDGER_PATH) {
       filled_notional: 0,
       terminal: false,
       status: 'submission_unknown',
-      paper: Boolean(order.providerPaper),
+      paper: order.accountNamespace.split(':')[1] === 'paper',
     };
     ledger.pending_orders[clientId] = pending;
-    saveSubPositionsLedger(ledger, filePath);
     return pending;
   });
 }
 
-function attachPendingOrder(clientId, orderId, filePath = DEFAULT_LEDGER_PATH) {
-  return withFileLockSync(`${filePath}.lock`, () => {
-    const ledger = loadSubPositionsLedger(filePath);
-    const pending = ledger.pending_orders?.[clientId];
-    if (!pending || typeof orderId !== 'string' || !orderId || (pending.order_id && pending.order_id !== orderId)) {
+/** Identity mutations require the same authenticated namespace as beginPendingOrder. */
+function attachPendingOrder(clientId, orderId, filePath = DEFAULT_LEDGER_PATH, namespace) {
+  return mutateAccount(filePath, namespace, (ledger) => {
+    const pending = Object.hasOwn(ledger.pending_orders, clientId) && ledger.pending_orders[clientId];
+    if (!pending || !safeKey(orderId) || (pending.order_id && pending.order_id !== orderId) || pending.terminal) {
       throw new Error('Invalid pending order identity');
     }
     pending.order_id = orderId;
     pending.status = 'submitted';
-    saveSubPositionsLedger(ledger, filePath);
     return pending;
   });
 }
 
-function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_PATH) {
-  return withFileLockSync(`${filePath}.lock`, () => {
-    const ledger = loadSubPositionsLedger(filePath);
-    const pending = ledger.pending_orders?.[clientId];
-    if (!pending || !pending.order_id || receipt.orderId !== pending.order_id ||
-        receipt.symbol !== pending.symbol || receipt.side !== pending.side || receipt.quantity !== pending.quantity) {
+/** receipt: accountNamespace, orderId, symbol, side, quantity, filledQty,
+ * filledAvgPrice, status. Returned pending includes per-allocation filled_qty.
+ * Ledger and allocation watermarks commit together via the existing atomic rename.
+ */
+function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_PATH, namespace) {
+  return mutateAccount(filePath, namespace, (ledger) => {
+    const pending = Object.hasOwn(ledger.pending_orders, clientId) && ledger.pending_orders[clientId];
+    if (!plainRecord(receipt) || !pending || receipt.accountNamespace !== namespace || !pending.order_id ||
+        receipt.orderId !== pending.order_id || receipt.symbol !== pending.symbol ||
+        receipt.side !== pending.side || receipt.quantity !== pending.quantity) {
       throw new Error('Receipt identity does not match pending order');
     }
     const filled = receipt.filledQty;
@@ -231,28 +355,31 @@ function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_P
     if (!Number.isFinite(filled) || filled < 0 || filled > pending.quantity ||
         (filled > 0 && (!Number.isFinite(average) || average <= 0)) ||
         typeof receipt.status !== 'string' || !receipt.status ||
-        (receipt.status === 'filled' && filled !== pending.quantity)) {
-      throw new Error('Invalid cumulative fill receipt');
-    }
+        (receipt.status === 'filled' && filled !== pending.quantity)) throw new Error('Invalid cumulative fill receipt');
     const notional = filled > 0 ? filled * average : 0;
     const delta = filled - pending.filled_qty;
     const cost = notional - pending.filled_notional;
-    if (delta < 0 || (delta === 0 && cost !== 0) || (delta > 0 && (!Number.isFinite(cost) || cost <= 0))) {
+    if (!Number.isFinite(notional) || delta < 0 || (delta === 0 && cost !== 0) ||
+        (delta > 0 && (!Number.isFinite(cost) || cost <= 0))) {
       throw new Error('Cumulative receipt regressed or changed previously applied fills');
     }
     if (pending.terminal) {
       if (delta !== 0) throw new Error('Terminal receipt changed previously applied fills');
       return pending;
     }
-    if (delta > 0) {
+    let remaining = delta;
+    for (const allocation of pending.allocations) {
+      const allocated = Math.min(remaining, allocation.quantity - allocation.filled_qty);
+      if (allocated <= 0) continue;
+      remaining -= allocated;
       const list = ledger.positions[pending.symbol] ||= [];
       if (pending.side === 'buy') {
-        let sub = list.find((item) => item.order_id === pending.order_id);
+        let sub = list.find((item) => item.order_id === pending.order_id && item.strategy_id === allocation.strategyId);
         if (!sub) {
           sub = {
-            sub_id: `sub_${clientId}`,
+            sub_id: `sub_${clientId}_${allocation.strategyId}`,
             symbol: pending.symbol,
-            strategy_id: pending.strategy_id,
+            strategy_id: allocation.strategyId,
             source: pending.source,
             timeframe: pending.timeframe,
             confidence: pending.confidence,
@@ -265,17 +392,19 @@ function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_P
           };
           list.push(sub);
         }
-        sub.entry_price = (sub.quantity * sub.entry_price + cost) / (sub.quantity + delta);
-        sub.quantity += delta;
+        const allocationCost = (cost / delta) * allocated;
+        sub.entry_price = (sub.quantity * sub.entry_price + allocationCost) / (sub.quantity + allocated);
+        sub.quantity += allocated;
       } else {
-        const available = list.filter((item) => item.strategy_id === pending.strategy_id && item.status === 'open')
+        const available = list.filter((item) => item.strategy_id === allocation.strategyId && item.status === 'open')
           .reduce((sum, item) => sum + item.quantity, 0);
-        if (available + 1e-8 < delta) throw new Error('Confirmed exit exceeds attributed holdings');
-        let remaining = delta;
-        for (let i = list.length - 1; i >= 0 && remaining > 0; i--) {
+        if (available + 1e-8 < allocated) throw new Error('Confirmed exit exceeds attributed holdings');
+        let toClose = allocated;
+        // Retain existing newest-lot-first policy within this strategy only.
+        for (let i = list.length - 1; i >= 0 && toClose > 0; i--) {
           const sub = list[i];
-          if (sub.strategy_id !== pending.strategy_id || sub.status !== 'open') continue;
-          const closed = Math.min(sub.quantity, remaining);
+          if (sub.strategy_id !== allocation.strategyId || sub.status !== 'open') continue;
+          const closed = Math.min(sub.quantity, toClose);
           ledger.history.push({
             ...sub,
             quantity: closed,
@@ -285,63 +414,24 @@ function applyPendingOrderReceipt(clientId, receipt, filePath = DEFAULT_LEDGER_P
             exit_order_id: pending.order_id,
           });
           sub.quantity -= closed;
-          remaining -= closed;
+          toClose -= closed;
           if (sub.quantity === 0) list.splice(i, 1);
         }
         if (!list.length) delete ledger.positions[pending.symbol];
       }
+      allocation.filled_qty += allocated;
     }
     pending.filled_qty = filled;
     pending.filled_notional = notional;
     pending.status = receipt.status;
     pending.terminal = ['filled', 'canceled', 'expired', 'rejected'].includes(receipt.status);
-    saveSubPositionsLedger(ledger, filePath);
     return pending;
   });
 }
 
 function recordSubPositionEntry(entry, filePath = DEFAULT_LEDGER_PATH) {
-  const sym = String(entry.symbol || '').toUpperCase();
-  const qty = Number(entry.quantity);
-  if (!sym || !Number.isFinite(qty) || qty <= 0) {
-    throw new Error('Invalid sub-position entry payload');
-  }
+  throw new Error('Legacy direct mutation quarantined; use namespaced confirmed receipts');
 
-  const lockPath = `${filePath}.lock`;
-  return withFileLockSync(lockPath, () => {
-    const ledger = loadSubPositionsLedger(filePath);
-    if (!ledger.positions[sym]) {
-      ledger.positions[sym] = [];
-    }
-
-    const now = new Date().toISOString();
-    const subId = `sub_${sym}_${entry.strategyId || 'manual'}_${Date.now()}`;
-
-    const subPos = {
-      sub_id: subId,
-      symbol: sym,
-      strategy_id: entry.strategyId || (entry.source === 'manual' ? 'manual' : 'unknown'),
-      source: entry.source || (entry.strategyId === 'manual' ? 'manual' : 'bot'),
-      quantity: qty,
-      entry_price: Number(entry.entryPrice || 0),
-      timeframe: entry.timeframe || '1m',
-      confidence: Number(entry.confidence || 1.0),
-      signature: entry.signature || generateOrderSignature({
-        strategyId: entry.strategyId,
-        timeframe: entry.timeframe,
-        confidence: entry.confidence,
-        source: entry.source,
-        symbol: sym
-      }),
-      order_id: entry.orderId || '',
-      submitted_at: entry.submittedAt || now,
-      status: 'open'
-    };
-
-    ledger.positions[sym].push(subPos);
-    saveSubPositionsLedger(ledger, filePath);
-    return subPos;
-  });
 }
 
 /**
@@ -354,58 +444,8 @@ function recordSubPositionEntry(entry, filePath = DEFAULT_LEDGER_PATH) {
  * @returns {number} actual closed quantity
  */
 function recordSubPositionExit(symbol, strategyId, quantityToClose, exitMeta = {}, filePath = DEFAULT_LEDGER_PATH) {
-  const qtyToClose = Number(quantityToClose);
-  if (!Number.isFinite(qtyToClose) || qtyToClose <= 0) return 0;
+  throw new Error('Legacy direct mutation quarantined; use namespaced confirmed receipts');
 
-  const sym = String(symbol || '').toUpperCase();
-  const lockPath = `${filePath}.lock`;
-
-  return withFileLockSync(lockPath, () => {
-    const ledger = loadSubPositionsLedger(filePath);
-    const list = ledger.positions[sym];
-    if (!list || list.length === 0) return 0;
-
-    let remainingToClose = qtyToClose;
-    let totalClosed = 0;
-    const now = new Date().toISOString();
-
-    for (let i = list.length - 1; i >= 0; i--) {
-      const sub = list[i];
-      if (sub.strategy_id === strategyId && sub.status === 'open') {
-        if (sub.quantity <= remainingToClose + 1e-8) {
-          // Fully close this sub-position
-          const closedQty = sub.quantity;
-          sub.status = 'closed';
-          sub.closed_at = now;
-          sub.exit_price = Number(exitMeta.exitPrice || 0);
-          remainingToClose -= closedQty;
-          totalClosed += closedQty;
-          ledger.history.push({ ...sub });
-          list.splice(i, 1);
-        } else {
-          // Partial close
-          sub.quantity = Math.max(0, sub.quantity - remainingToClose);
-          totalClosed += remainingToClose;
-          ledger.history.push({
-            ...sub,
-            quantity: remainingToClose,
-            status: 'partially_closed',
-            closed_at: now,
-            exit_price: Number(exitMeta.exitPrice || 0)
-          });
-          remainingToClose = 0;
-        }
-      }
-      if (remainingToClose <= 0) break;
-    }
-
-    if (list.length === 0) {
-      delete ledger.positions[sym];
-    }
-
-    saveSubPositionsLedger(ledger, filePath);
-    return totalClosed;
-  });
 }
 
 /**
@@ -419,8 +459,8 @@ function recordSubPositionExit(symbol, strategyId, quantityToClose, exitMeta = {
  * @param {string} [filePath=DEFAULT_LEDGER_PATH]
  * @returns {Array<Object>} Enriched positions containing both aggregate and itemized sub-positions
  */
-function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH) {
-  const ledger = loadSubPositionsLedger(filePath);
+function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH, namespace) {
+  const ledger = loadAccountLedger(filePath, namespace);
   const reconciled = [];
 
   for (const bp of brokerPositions) {
@@ -504,6 +544,7 @@ function reconcilePositions(brokerPositions = [], filePath = DEFAULT_LEDGER_PATH
 }
 
 module.exports = {
+  loadAccountLedger,
   beginPendingOrder,
   attachPendingOrder,
   applyPendingOrderReceipt,

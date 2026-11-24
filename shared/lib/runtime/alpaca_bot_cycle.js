@@ -108,7 +108,11 @@ function fetchAlpacaPositions(live, options = {}) {
   const runGateway = options.runGatewayCommand || runGatewayCommand;
   let payload;
   try {
-    payload = runGateway(['positions', ...(live ? ['--live'] : []), '--json']);
+    payload = runGateway([
+      'positions',
+      ...(live ? ['--live'] : (options.paperProvider ? ['--paper-provider'] : [])),
+      '--json',
+    ]);
   } catch (error) {
     return { status: 'unavailable', positions: [], reason: error.message };
   }
@@ -132,6 +136,7 @@ function fetchAlpacaPositions(live, options = {}) {
   return {
     status: payload.positions.length === 0 ? 'confirmed_empty' : 'confirmed',
     positions: payload.positions,
+    ...(payload.accountNamespace ? { accountNamespace: payload.accountNamespace } : {}),
     reason: null,
   };
 }
@@ -143,12 +148,40 @@ function fetchAlpacaPositions(live, options = {}) {
  * trusting the requested signal price.
  */
 function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true, timeframe }, options = {}) {
-  const state = botState.loadState();
-  const inventory = fetchAlpacaPositions(live, options);
+  const stateStore = options.stateStore || botState;
+  const acquire = options.acquireLock || acquireLock;
+  const release = options.releaseLock || releaseLock;
+  if (!acquire(stateStore.LOCK_PATH)) throw new Error('Alpaca bot cycle lock held');
+  try {
+  const state = stateStore.loadState();
+  const inventory = fetchAlpacaPositions(live, {
+    ...options,
+    paperProvider: options.paperProvider ?? !live,
+  });
   const brokerPositions = inventory.positions;
   const brokerPos = brokerPositions.find((p) => p.symbol === symbol);
-  const fillPrice = brokerPos ? Number(brokerPos.averagePrice) : Number(requestedPrice);
-  const filledQty = resolveEntryQty(brokerPos, qty);
+  let fillPrice = brokerPos ? Number(brokerPos.averagePrice) : Number(requestedPrice);
+  let filledQty = Number(qty);
+  let accountNamespace;
+  if (inventory.status !== 'confirmed' || typeof inventory.accountNamespace !== 'string') {
+    throw new Error('Alpaca entry requires confirmed authenticated inventory namespace');
+  }
+  if (inventory.status === 'confirmed' && inventory.accountNamespace) {
+    const { loadAccountLedger } = require('./sub_positions_ledger');
+    const ledger = loadAccountLedger(options.ledgerPath, inventory.accountNamespace);
+    const rows = (ledger.positions[symbol] || []).filter((row) => row.strategy_id === strategy?.name);
+    const provenQty = rows.reduce((sum, row) => sum + row.quantity, 0);
+    const trackedQty = state.positions.filter((row) => row.accountNamespace === inventory.accountNamespace
+      && row.symbol === symbol && row.strategyName === strategy?.name)
+      .reduce((sum, row) => sum + Number(row.qty), 0);
+    filledQty = Math.min(filledQty, provenQty - trackedQty);
+    if (!(filledQty > 0)) throw new Error('Alpaca entry has no untracked ledger-confirmed fill');
+    fillPrice = rows.reduce((sum, row) => sum + row.quantity * row.entry_price, 0) / provenQty;
+    accountNamespace = inventory.accountNamespace;
+  }
+  if (!Number.isFinite(filledQty) || filledQty <= 0 || !Number.isFinite(fillPrice) || fillPrice <= 0) {
+    throw new Error('Invalid Alpaca entry fill');
+  }
 
   const risk = strategy?.risk || {};
   const stopLossPct = Number.isFinite(risk.stop_loss_pct) ? risk.stop_loss_pct : state.config.defaultStopLossPct;
@@ -162,6 +195,7 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true,
   const position = {
     positionId: `${symbol}_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`,
     symbol,
+    ...(accountNamespace ? { accountNamespace } : {}),
     qty: filledQty,
     strategyName: strategy?.name || 'unknown',
     timeframe: positionTimeframe,
@@ -172,12 +206,15 @@ function recordAlpacaEntry({ symbol, qty, strategy, requestedPrice, live = true,
     targetPrice: fillPrice * (1 + takeProfitPct),
     maxHoldingDays,
     maxHoldingBars,
-    brokerReconciliation: inventory.status === 'confirmed' ? 'confirmed' : 'pending',
+    brokerReconciliation: accountNamespace ? 'confirmed' : 'pending',
   };
 
   state.positions.push(position);
-  botState.saveState(state);
+  stateStore.saveState(state);
   return position;
+  } finally {
+    release(stateStore.LOCK_PATH);
+  }
 }
 
 /**
@@ -212,11 +249,17 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     const state = stateStore.loadState();
     if (state.positions.length === 0) return result;
 
-    const inventory = fetchPositions(isLive);
+    const inventory = fetchPositions(isLive, { paperProvider: providerPaper });
     result.inventoryStatus = inventory.status;
     if (!['confirmed', 'confirmed_empty'].includes(inventory.status)) {
       result.blocked = true;
       result.errors.push(`Alpaca broker inventory ${inventory.status}: ${inventory.reason || 'unknown reason'}`);
+      return result;
+    }
+    if (executionEnabled && (typeof inventory.accountNamespace !== 'string'
+      || !new RegExp(`^alpaca:${isLive ? 'live' : 'paper'}:[A-Za-z0-9][A-Za-z0-9_-]*$`).test(inventory.accountNamespace))) {
+      result.blocked = true;
+      result.errors.push('Alpaca authenticated inventory account namespace unavailable');
       return result;
     }
     const brokerPositions = inventory.positions;
@@ -237,7 +280,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
     // Inventory changes cannot identify which order filled.
     for (const position of state.positions) {
       if (position.exit_pending) {
-        const key = position.exitOrderId || `legacy:${position.symbol}`;
+        const key = `${position.accountNamespace}:${position.exitClientOrderId || position.exitOrderId || `legacy:${position.symbol}`}`;
         if (!pendingBySymbol.has(key)) {
           pendingBySymbol.set(key, []);
         }
@@ -249,6 +292,10 @@ async function runAlpacaExitCheck(args = [], options = {}) {
       const first = pendingList[0];
       try {
         if (!first.exitOrderId) throw new Error('legacy pending exit needs order reconciliation');
+        if (first.accountNamespace !== inventory.accountNamespace || !Array.isArray(first.exitPlan)
+          || !Array.isArray(first.exitAllocations) || !first.exitClientOrderId) {
+          throw new Error('Pending exit account or persisted allocation plan unavailable');
+        }
         const fetchOrder = options.fetchOrder || ((orderId) => runGatewayCommand([
           'order',
           orderId,
@@ -258,12 +305,23 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         ]));
         const receipt = await fetchOrder(first.exitOrderId);
         const order = receipt?.order;
+        const pending = receipt?.pending;
         const previousQty = Number(first.exitFilledQty || 0);
         const previousNotional = Number(first.exitFilledNotional || 0);
         const filledQty = Number(order?.filledQty);
         const notional = filledQty === 0 ? 0 : filledQty * Number(order?.filledAvgPrice);
         const pendingQty = pendingList.reduce((sum, position) => sum + Number(position.qty), 0);
         if (receipt?.ok !== true || order?.orderId !== first.exitOrderId ||
+            order.accountNamespace !== first.accountNamespace || pending?.account_namespace !== first.accountNamespace ||
+            pending.client_id !== first.exitClientOrderId || pending.order_id !== first.exitOrderId ||
+            pending.symbol !== first.symbol || pending.side !== 'sell' ||
+            pending.quantity !== first.exitAllocations.reduce((sum, item) => sum + item.quantity, 0) ||
+            order.quantity !== pending.quantity || pending.filled_qty !== filledQty || pending.filled_notional !== notional ||
+            !Array.isArray(pending.allocations) || pending.allocations.length !== first.exitAllocations.length ||
+            pending.allocations.some((allocation, index) => allocation.strategyId !== first.exitAllocations[index].strategyId
+              || allocation.quantity !== first.exitAllocations[index].quantity
+              || !Number.isFinite(allocation.filled_qty) || allocation.filled_qty < 0 || allocation.filled_qty > allocation.quantity) ||
+            Math.abs(pending.allocations.reduce((sum, item) => sum + item.filled_qty, 0) - filledQty) > 1e-9 ||
             order.symbol !== first.symbol || order.side !== 'sell' ||
             typeof order.status !== 'string' || !order.status ||
             !Number.isFinite(previousQty) || previousQty < 0 ||
@@ -276,17 +334,37 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             (order.status === 'filled' && Math.abs(filledQty - previousQty - pendingQty) > 1e-9) ||
             (filledQty > previousQty && notional <= previousNotional) ||
             pendingList.some((position) => position.symbol !== first.symbol ||
+              position.accountNamespace !== first.accountNamespace || position.exitClientOrderId !== first.exitClientOrderId ||
+              JSON.stringify(position.exitPlan) !== JSON.stringify(first.exitPlan) ||
+              JSON.stringify(position.exitAllocations) !== JSON.stringify(first.exitAllocations) ||
               !Number.isFinite(Number(position.qty)) || Number(position.qty) <= 0 ||
               position.exitFilledQty !== first.exitFilledQty ||
               position.exitFilledNotional !== first.exitFilledNotional)) {
           throw new Error('invalid or regressed order fill receipt');
         }
-        let filledToAllocate = filledQty - previousQty;
+        const filledToAllocate = filledQty - previousQty;
         const exitPrice = filledToAllocate > 0 ? (notional - previousNotional) / filledToAllocate : null;
         const terminal = ['filled', 'canceled', 'expired', 'rejected'].includes(order.status);
+        if (pending.terminal !== terminal) throw new Error('Invalid terminal order watermark');
+        const fills = new Map();
+        for (const allocation of pending.allocations) {
+          let offset = 0;
+          for (const item of first.exitPlan.filter((row) => row.strategyId === allocation.strategyId)) {
+            fills.set(item.positionId, Math.max(0, Math.min(item.quantity, allocation.filled_qty - offset)));
+            offset += item.quantity;
+          }
+          if (Math.abs(offset - allocation.quantity) > 1e-9) throw new Error('Invalid persisted position allocation plan');
+        }
+        let delta = 0;
         for (const position of pendingList) {
-          const soldQty = Math.min(Number(position.qty), filledToAllocate);
-          filledToAllocate -= soldQty;
+          const applied = Number(position.exitPositionFilledQty || 0);
+          const sold = fills.get(position.positionId) - applied;
+          if (!Number.isFinite(sold) || sold < 0 || sold > Number(position.qty)) throw new Error('Invalid position fill watermark');
+          delta += sold;
+        }
+        if (Math.abs(delta - filledToAllocate) > 1e-9) throw new Error('Position allocation fill mismatch');
+        for (const position of pendingList) {
+          const soldQty = fills.get(position.positionId) - Number(position.exitPositionFilledQty || 0);
           let retained = position;
           if (soldQty > 0) {
             const outcome = buildExitOutcome(
@@ -308,6 +386,7 @@ async function runAlpacaExitCheck(args = [], options = {}) {
               exitOrderId: terminal ? null : first.exitOrderId,
               exitFilledQty: terminal ? 0 : filledQty,
               exitFilledNotional: terminal ? 0 : notional,
+              exitPositionFilledQty: terminal ? 0 : fills.get(position.positionId),
             });
           }
         }
@@ -319,6 +398,11 @@ async function runAlpacaExitCheck(args = [], options = {}) {
 
     for (const position of state.positions) {
       if (position.exit_pending) {
+        continue;
+      }
+      if (executionEnabled && position.accountNamespace !== inventory.accountNamespace) {
+        remaining.push(position);
+        result.errors.push(`${position.symbol}: legacy or different-account position quarantined`);
         continue;
       }
       const brokerPos = brokerBySymbol.get(position.symbol);
@@ -339,14 +423,17 @@ async function runAlpacaExitCheck(args = [], options = {}) {
         continue;
       }
 
-      if (!exitingBySymbol.has(position.symbol)) {
-        exitingBySymbol.set(position.symbol, []);
+      const key = `${position.accountNamespace || 'dry'}:${position.symbol}`;
+      if (!exitingBySymbol.has(key)) {
+        exitingBySymbol.set(key, []);
       }
-      exitingBySymbol.get(position.symbol).push({ position, exitReason, currentPrice });
+      exitingBySymbol.get(key).push({ position, exitReason, currentPrice });
     }
 
-    for (const [symbol, exitingItems] of exitingBySymbol.entries()) {
-      if (remaining.some((position) => position.symbol === symbol && position.exit_pending)) {
+    for (const exitingItems of exitingBySymbol.values()) {
+      const symbol = exitingItems[0].position.symbol;
+      if (remaining.some((position) => position.symbol === symbol && position.exit_pending
+        && position.accountNamespace === exitingItems[0].position.accountNamespace)) {
         remaining.push(...exitingItems.map((item) => item.position));
         result.errors.push(`Pending exit for ${symbol} requires reconciliation; skipping duplicate exit.`);
         continue;
@@ -372,14 +459,50 @@ async function runAlpacaExitCheck(args = [], options = {}) {
       }
 
       if (executionEnabled) {
+        let pendingDispatchId = null;
         try {
           const tradeFn = options.commandTrade || require('../../../frontend/cli-tui/commands/trade/trade.js').commandTrade;
-          const { generateOrderSignature } = require('./sub_positions_ledger.js');
-          const signature = generateOrderSignature({
-            strategyId: exitingItems[0].position.strategyName || 'alpaca_paper',
-            source: 'bot',
-            symbol
+          const clientOrderId = `bot_exit_${result.cycleId}_${symbol}_${crypto.randomBytes(3).toString('hex')}`;
+          pendingDispatchId = clientOrderId;
+          const exitPlan = [];
+          const allocationByStrategy = new Map();
+          let remainingToPlan = aggregateSellQty;
+          for (const item of exitingItems) {
+            const allocatedQty = Math.min(Number(item.position.qty), remainingToPlan);
+            if (allocatedQty <= 0) continue;
+            remainingToPlan -= allocatedQty;
+            const strategyId = item.position.strategyName || 'unknown';
+            exitPlan.push({ positionId: item.position.positionId, strategyId, quantity: allocatedQty });
+            allocationByStrategy.set(strategyId, (allocationByStrategy.get(strategyId) || 0) + allocatedQty);
+          }
+          const exitAllocations = [...allocationByStrategy].map(([strategyId, quantity]) => ({ strategyId, quantity }));
+          const pendingExitPositions = [];
+          const pendingPositions = exitingItems.flatMap((item) => {
+            const plan = exitPlan.find((row) => row.positionId === item.position.positionId);
+            if (!plan) return [item.position];
+            const pending = {
+              ...item.position,
+              qty: plan.quantity,
+              exit_pending: true,
+              exitOrderId: null,
+              exitClientOrderId: clientOrderId,
+              exitPlan,
+              exitAllocations,
+              exitFilledQty: 0,
+              exitFilledNotional: 0,
+              exitPositionFilledQty: 0,
+              exitPendingAt: new Date().toISOString(),
+              exitReason: item.exitReason,
+              exitPrice: item.currentPrice,
+            };
+            pendingExitPositions.push(pending);
+            const remainder = Number(item.position.qty) - plan.quantity;
+            return remainder > 0 ? [pending, { ...item.position, qty: remainder }] : [pending];
           });
+          remaining.push(...pendingPositions);
+          state.positions = remaining;
+          // Persist the client ID and ordered plan before dispatch: replay can reconcile, not resubmit.
+          stateStore.saveState(state);
           const sellArgs = [
             'sell',
             symbol,
@@ -388,8 +511,10 @@ async function runAlpacaExitCheck(args = [], options = {}) {
             ...(providerPaper ? ['--paper-provider'] : ['--live']),
             '--strategy',
             exitingItems[0].position.strategyName || 'alpaca_paper',
-            '--signature',
-            signature,
+            '--client-order-id',
+            clientOrderId,
+            '--allocations',
+            JSON.stringify(exitAllocations),
             '--source',
             'bot'
           ];
@@ -400,47 +525,25 @@ async function runAlpacaExitCheck(args = [], options = {}) {
               ? `Exit sell failed for ${symbol}: non-zero exit ${receipt}`
               : `Exit sell for ${symbol}: order receipt unavailable; reconciliation required`);
             if (typeof receipt !== 'number' || receipt === 0) {
-              for (const item of exitingItems) remaining.push({ ...item.position, exit_pending: true });
+              for (const position of pendingExitPositions) position.exit_pending = true;
               continue;
             }
-            for (const item of exitingItems) remaining.push(item.position);
             continue;
           }
-          availableBySymbol.set(symbol, available - aggregateSellQty);
-
-          // Order accepted by broker: transition to exit_pending and retain in state until fill confirmed
-          let remainingToMark = aggregateSellQty;
-          for (const item of exitingItems) {
-            const itemQty = Number(item.position.qty || 0);
-            const allocatedQty = Math.min(itemQty, remainingToMark);
-            remainingToMark -= allocatedQty;
-
-            if (allocatedQty > 0) {
-              remaining.push({
-                ...item.position,
-                qty: allocatedQty,
-                exit_pending: true,
-                exitOrderId: receipt.order.orderId,
-                exitFilledQty: 0,
-                exitFilledNotional: 0,
-                exitPendingAt: new Date().toISOString(),
-                exitReason: item.exitReason,
-                exitPrice: item.currentPrice,
-              });
-              result.sellsSubmitted = (result.sellsSubmitted || 0) + 1;
-            }
-            if (itemQty > allocatedQty) {
-              remaining.push({
-                ...item.position,
-                qty: itemQty - allocatedQty,
-              });
-            }
+          if (receipt.order.accountNamespace !== inventory.accountNamespace
+            || receipt.order.clientOrderId !== clientOrderId) {
+            throw new Error('Exit receipt account or client identity mismatch');
           }
+          availableBySymbol.set(symbol, available - aggregateSellQty);
+          for (const position of pendingExitPositions) position.exitOrderId = receipt.order.orderId;
+          result.sellsSubmitted = (result.sellsSubmitted || 0) + pendingExitPositions.length;
           continue;
         } catch (err) {
           result.errors.push(`Exit sell failed for ${symbol}: ${err.message}`);
           // Submission may have reached the broker before a transport/parser failure.
-          for (const item of exitingItems) remaining.push({ ...item.position, exit_pending: true });
+          if (!remaining.some((position) => position.exitClientOrderId === pendingDispatchId)) {
+            for (const item of exitingItems) remaining.push({ ...item.position, exit_pending: true });
+          }
           continue;
         }
       }

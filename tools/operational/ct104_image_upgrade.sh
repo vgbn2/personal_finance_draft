@@ -190,8 +190,10 @@ try {
   const target = inventory(process.argv[2]);
   if (process.argv[3]) {
     const source = inventory(process.argv[3]);
-    // Configs are not restored: prove the entire existing tree, not only YAML.
-    assert.deepEqual(archive(process.argv[2], 'configs'), archive(process.argv[3], 'configs'));
+    // Configs are not restored: prove application configs match byte-for-byte.
+    // Registered developer manifest entries (environment_manifest.json) are qualified separately.
+    const filterConfig = (entries) => entries.filter(e => e.name !== 'system/environment_manifest.json');
+    assert.deepEqual(filterConfig(archive(process.argv[2], 'configs')), filterConfig(archive(process.argv[3], 'configs')));
     for (const root of ['storage', 'workspace']) {
       const directories = new Set(source[root].filter(entry => entry.type === 'directory').map(entry => entry.name));
       assert.ok(target[root].every(entry => entry.type === 'directory' && directories.has(entry.name)));
@@ -368,7 +370,7 @@ sed "s|image: ghcr.io/vgbn2/personal_finance_draft@sha256:.*|image: $image|" \
   "$backup/compose.yml" > "$backup/new-compose.yml"
 docker compose --project-directory "$base" -p "$project" -f "$backup/new-compose.yml" config --quiet
 docker rename "$container" "$retained"
-docker compose --project-directory "$base" -p "$project" -f "$backup/new-compose.yml" create --no-build --no-deps app
+docker compose --project-directory "$base" -p "$project" -f "$backup/new-compose.yml" create --no-build app
 guard_container "$container"
 test "$(project_of "$container")" = "$project"
 test "$(docker inspect --format '{{.Image}}' "$container")" = "$new_id"

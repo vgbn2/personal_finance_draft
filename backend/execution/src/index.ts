@@ -17,6 +17,7 @@ import {
   AlpacaAdapterOptions,
   PolymarketAdapterOptions,
   DeribitAdapterOptions,
+  OrderAllocation,
 } from './adapters';
 import { runAggregatePortfolioCommand } from './commands/aggregate_portfolio';
 
@@ -34,6 +35,7 @@ export {
   AlpacaAdapterOptions,
   PolymarketAdapterOptions,
   DeribitAdapterOptions,
+  OrderAllocation,
 };
 import {
   runCycle,
@@ -312,6 +314,28 @@ export class ExecutionGateway {
       : null;
   }
 
+  private isAlpaca(order?: TradeOrder): boolean {
+    return order?.broker === 'alpaca' || this.adapter instanceof AlpacaAdapter;
+  }
+
+  async authenticatedAccountNamespaceForRead(): Promise<string> {
+    if (!this.adapter.getAccountNamespace) {
+      throw new Error('Authenticated account namespace is unavailable');
+    }
+    const namespace = await this.adapter.getAccountNamespace();
+    if (typeof namespace !== 'string' || !namespace.startsWith('alpaca:')) {
+      throw new Error('Authenticated Alpaca account namespace is malformed');
+    }
+    return namespace;
+  }
+
+  private allocationPlan(order: TradeOrder): OrderAllocation[] {
+    return order.allocations || [{
+      strategyId: order.strategyId || order.strategy || 'manual',
+      quantity: order.quantity,
+    }];
+  }
+
   async validateOrder(order: TradeOrder): Promise<boolean> {
     console.log(`[EXECUTION] Validating order for ${order.instrumentId}`);
     
@@ -376,9 +400,12 @@ export class ExecutionGateway {
     } else {
       try {
         const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
-        const receiptAccounting = order.broker === 'alpaca' || this.adapter instanceof AlpacaAdapter;
+        const receiptAccounting = !this.dryRun && this.isAlpaca(order);
         if (receiptAccounting) {
           if (!this.adapter.getOrder) throw new Error('Alpaca receipt lookup is required');
+          const accountNamespace = await this.authenticatedAccountNamespaceForRead();
+          order.accountNamespace = accountNamespace;
+          order.allocations = this.allocationPlan(order);
           await this.reconcilePendingOrders(Boolean(order.providerPaper));
           order.clientOrderId ||= crypto.randomUUID();
           subLedger.beginPendingOrder(order, this.ledgerPath);
@@ -392,9 +419,12 @@ export class ExecutionGateway {
         if (receiptAccounting) {
           // Submission status is not fill evidence. Persist the ID before looking up receipts.
           order.status = OrderStatus.SUBMITTED;
-          subLedger.attachPendingOrder(order.clientOrderId, result.orderId, this.ledgerPath);
+          subLedger.attachPendingOrder(order.clientOrderId, result.orderId, this.ledgerPath, order.accountNamespace);
           const receipt = await this.adapter.getOrder!(result.orderId);
-          subLedger.applyPendingOrderReceipt(order.clientOrderId, receipt, this.ledgerPath);
+          subLedger.applyPendingOrderReceipt(order.clientOrderId, {
+            ...receipt,
+            accountNamespace: order.accountNamespace,
+          }, this.ledgerPath, order.accountNamespace);
           if (receipt.status === 'filled') order.status = OrderStatus.FILLED;
         } else try {
           // Other brokers retain their existing contract until their receipts are qualified.
@@ -447,12 +477,16 @@ export class ExecutionGateway {
   async reconcilePendingOrders(paper: boolean): Promise<void> {
     if (!this.adapter.getOrder) throw new Error('Receipt lookup is unavailable');
     const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
-    const ledger = subLedger.loadSubPositionsLedger(this.ledgerPath);
+    const namespace = await this.authenticatedAccountNamespaceForRead();
+    const ledger = subLedger.loadAccountLedger(this.ledgerPath, namespace);
     for (const pending of Object.values(ledger.pending_orders || {}) as any[]) {
       if (pending.terminal || pending.paper !== paper) continue;
       if (!pending.order_id) throw new Error('Unknown submission requires operator reconciliation; retry prohibited');
       const receipt = await this.adapter.getOrder(pending.order_id);
-      subLedger.applyPendingOrderReceipt(pending.client_id, receipt, this.ledgerPath);
+      subLedger.applyPendingOrderReceipt(pending.client_id, {
+        ...receipt,
+        accountNamespace: namespace,
+      }, this.ledgerPath, namespace);
     }
   }
 
@@ -513,6 +547,24 @@ Examples:
   npx ts-node backend/execution/src/index.ts balance
   npx ts-node backend/execution/src/index.ts polymarket portfolio
   `);
+}
+
+function positionalArguments(args: string[], start: number): string[] {
+  const values: string[] = [];
+  const flagsWithValues = new Set([
+    '--allocations', '--broker', '--client-order-id', '--confidence', '--paper-max-notional',
+    '--pin', '--price', '--signature', '--sl', '--source', '--strategy', '--take-profit',
+    '--timeframe', '--tp', '--units-per-lot', '--stop-loss',
+  ]);
+  for (let index = start; index < args.length; index += 1) {
+    const value = args[index];
+    if (!value.startsWith('--')) {
+      values.push(value);
+      continue;
+    }
+    if (flagsWithValues.has(value)) index += 1;
+  }
+  return values;
 }
 
 function createExecutionGatewayAdapter(adapter: any) {
@@ -682,7 +734,7 @@ export async function main() {
     }
     
     // Filter out flags from potential type/price positions
-    const nonFlagArgs = args.slice(3).filter(a => !a.startsWith('--'));
+    const nonFlagArgs = positionalArguments(args, 3);
     const type = (nonFlagArgs[0] || 'market').toLowerCase() as 'market' | 'limit';
     const price = nonFlagArgs[1] ? Number(nonFlagArgs[1]) : undefined;
 
@@ -716,6 +768,19 @@ export async function main() {
     const slNum = slVal ? Number(slVal) : undefined;
     const tpNum = tpVal ? Number(tpVal) : undefined;
     const unitsPerLotNum = unitsPerLotVal ? Number(unitsPerLotVal) : undefined;
+    const allocationsValue = parseOptionValue(args, '--allocations');
+    let allocations: OrderAllocation[] | undefined;
+    if (allocationsValue !== undefined) {
+      try {
+        const parsed = JSON.parse(allocationsValue);
+        if (!Array.isArray(parsed)) throw new Error('allocations must be a JSON array');
+        allocations = parsed;
+      } catch (error: any) {
+        if (useJson) console.log(JSON.stringify({ ok: false, error: `Invalid --allocations JSON: ${error.message}` }));
+        else console.error(`Error: Invalid --allocations JSON: ${error.message}`);
+        process.exit(1);
+      }
+    }
 
     const order: TradeOrder = {
       instrumentId: symbol,
@@ -739,6 +804,7 @@ export async function main() {
       stopLoss: slNum,
       takeProfit: tpNum,
       unitsPerLot: unitsPerLotNum,
+      allocations,
     };
 
     await gateway.execute(order);
@@ -789,27 +855,35 @@ export async function main() {
     try {
       const accountAdapter: BrokerAdapter = adapter;
       if (!accountAdapter.getOrder) throw new Error('Order lookup is unavailable for this broker');
+      const accountNamespace = broker === 'alpaca' ? await gateway.authenticatedAccountNamespaceForRead() : undefined;
+      if (broker === 'alpaca') await gateway.reconcilePendingOrders(providerPaper);
       const order = await accountAdapter.getOrder(String(args[1] || ''));
-      console.log(JSON.stringify({ ok: true, order }));
+      const pending = broker === 'alpaca'
+        ? require('../../../shared/lib/runtime/sub_positions_ledger.js')
+          .loadAccountLedger(undefined, accountNamespace)
+          .pending_orders
+        : undefined;
+      const pendingOrder = pending && Object.values(pending).find((item: any) => item.order_id === order.orderId);
+      console.log(JSON.stringify({ ok: true, accountNamespace, order, pendingOrder: pendingOrder || null }));
     } catch (err: any) {
       console.log(JSON.stringify({ ok: false, error: err.message }));
       process.exitCode = 1;
     }
   } else if (command === 'positions') {
     try {
+      let accountNamespace: string | undefined;
       if (broker === 'alpaca') {
+        accountNamespace = await gateway.authenticatedAccountNamespaceForRead();
         await gateway.reconcilePendingOrders(providerPaper);
       }
       const rawPositions = await adapter.getPositions();
       let positions = rawPositions;
-      try {
+      if (broker === 'alpaca') {
         const subLedger = require('../../../shared/lib/runtime/sub_positions_ledger.js');
-        positions = subLedger.reconcilePositions(rawPositions);
-      } catch {
-        // Fallback to raw positions if ledger unavailable
+        positions = subLedger.reconcilePositions(rawPositions, undefined, accountNamespace);
       }
       if (useJson) {
-        console.log(JSON.stringify({ ok: true, positions }));
+        console.log(JSON.stringify({ ok: true, accountNamespace, positions }));
       } else {
         console.log(`[GATEWAY] Current Positions:`, positions);
       }

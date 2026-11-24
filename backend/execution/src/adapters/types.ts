@@ -52,6 +52,14 @@ export interface TradeOrder {
   error?: string;
   unitsPerLot?: number;
   timestamp?: Date | string;
+  accountNamespace?: string;
+  allocations?: OrderAllocation[];
+}
+
+export interface OrderAllocation {
+  strategyId: string;
+  quantity: number;
+  filled_qty?: number;
 }
 
 export interface RiskContext {
@@ -78,6 +86,7 @@ export interface BrokerAdapter {
     filledQty: number;
     filledAvgPrice: number | null;
   }>;
+  getAccountNamespace?(): Promise<string>;
 }
 
 export interface Mt5RegistrationMessage {

@@ -1,0 +1,28 @@
+name: sovereign-search
+
+services:
+  searxng:
+    container_name: sv-searxng
+    image: searxng/searxng@sha256:a36a9d52d6f9014eb032998e72cb8c82beb6a3f8a17dd05da4bc2e0fcd73bd7f
+    pull_policy: never
+    user: "0"
+    restart: unless-stopped
+    # The existing default bridge rejects Compose's service-scoped network aliases.
+    network_mode: bridge
+    env_file:
+      - path: ${SEARXNG_ENV_FILE:?SEARXNG_ENV_FILE must name the preserved private environment file}
+        required: true
+        format: raw
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - search-config:/etc/searxng
+      - search-cache:/var/cache/searxng
+
+volumes:
+  search-config:
+    external: true
+    name: a95e0f51192da50204771df5364a36bf570e7e6a0bdd4671c118106e8f94c600
+  search-cache:
+    external: true
+    name: f604a8165306fc84e0832bbe557ed4494746c51ddf0def48590323b91bb11017
