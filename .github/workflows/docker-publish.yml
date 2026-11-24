@@ -135,6 +135,7 @@ jobs:
           docker cp tests sv-allinone-test:/app/tests
           docker exec sv-allinone-test mkdir -p /tmp/opencode
           docker exec sv-allinone-test node --test \
+            tests/scripts/strategy/ai_client_diagnostics.test.js \
             tests/scripts/strategy/strategy_rules.test.js \
             tests/scripts/strategy/strategy_rules_seams.test.js \
             tests/scripts/strategy/strategy_rules_boundaries.test.js

@@ -70,11 +70,21 @@ async function findWorkingRouterUrl() {
   return cachedWorkingRouterUrl || null;
 }
 
+function reportAiFailure(stage, reason, started, status) {
+  console.error('[AI-FAILURE] ' + JSON.stringify({
+    stage,
+    reason,
+    elapsed_ms: Date.now() - started,
+    ...(status === undefined ? {} : { status }),
+  }));
+}
+
 /**
- * Ask the AI model. Checks 9Router (ag/gemini-3.8-flash) first, then falls back to local Ollama.
- * Returns { text, source } or null if unavailable.
+ * Ask the configured model; general callers retain Ollama fallback.
+ * Strategy synthesis disables substitution. Failures log metadata, never payloads.
  */
-async function ask(prompt, systemPrompt = '') {
+async function ask(prompt, systemPrompt = '', { allowFallback = true } = {}) {
+  const started = Date.now();
   // 1. Try 9Router
   const routerUrl = await findWorkingRouterUrl();
   if (routerUrl) {
@@ -98,18 +108,29 @@ async function ask(prompt, systemPrompt = '') {
         signal: AbortSignal.timeout(Number(process.env.SOVEREIGN_ROUTER_TIMEOUT_MS) || 45000),
       });
 
-      if (res.ok) {
+      if (!res.ok) {
+        reportAiFailure('router', 'http_error', started, res.status);
+        await res.body?.cancel();
+      } else {
         const data = await res.json();
-        const text = data.choices?.[0]?.message?.content;
-        if (text && typeof text === 'string') {
+        const text = data?.choices?.[0]?.message?.content;
+        if (typeof text === 'string' && text.trim()) {
           const usage = data.usage || null;
           return { text: text.trim(), source: `router:${ROUTER_MODEL}`, usage };
         }
+        reportAiFailure('router', 'empty_response', started);
       }
-    } catch {
-      // fall through to Ollama fallback
+    } catch (error) {
+      const reason = error.name === 'TimeoutError'
+        ? 'timeout'
+        : (error.name === 'SyntaxError' ? 'response_json_invalid' : 'transport_error');
+      reportAiFailure('router', reason, started);
     }
+  } else {
+    reportAiFailure('router', 'unavailable', started);
   }
+
+  if (!allowFallback) return null;
 
   // 2. Fall back to local Ollama if configured
   try {
@@ -206,7 +227,8 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
   }
 }`;
 
-  const response = await ask(userPrompt, systemPrompt);
+  const started = Date.now();
+  const response = await ask(userPrompt, systemPrompt, { allowFallback: false });
   if (!response?.text) return null;
 
   if (response.usage) {
@@ -218,10 +240,13 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
 
   try {
     let clean = response.text.trim();
-    const jsonMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || clean.match(/(\{[\s\S]*\})/);
+    const jsonMatch = clean.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
     if (jsonMatch) clean = jsonMatch[1].trim();
     const parsed = JSON.parse(clean);
-    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      reportAiFailure('strategy', 'strategy_shape_invalid', started);
+      return null;
+    }
 
     return {
       ...parsed,
@@ -229,6 +254,7 @@ Output Format: Return strictly a single raw JSON object without markdown fences,
       usage: response.usage || null,
     };
   } catch {
+    reportAiFailure('strategy', 'strategy_json_invalid', started);
     return null;
   }
 }

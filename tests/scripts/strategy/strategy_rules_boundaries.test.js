@@ -93,6 +93,7 @@ test('AI response passes real HTTP/JSON/spec/evaluation boundaries without model
         rules: { ...rules, entry: { ...rules.entry, op: requests === 1 ? 'gt' : 'lt' } },
       };
       if (requests === 4) candidate.timeframe = '1d';
+      if (requests === 5) candidate.rules = null;
       response.end(JSON.stringify({ choices: [{ message: { content: JSON.stringify(candidate) } }] }));
     });
   });
@@ -109,6 +110,8 @@ test('AI response passes real HTTP/JSON/spec/evaluation boundaries without model
         assert.equal(mismatch,null,'AI must not silently substitute an unrequested timeframe');
         const daily=await generateAiCandidateSpec({universe:['BTCUSDT'],timeframe:'1d',seed:'same'});
         assert.equal(daily.timeframe,'1d');
+        const rejected=await generateAiCandidateSpec({universe:['BTCUSDT'],timeframe:'1d',seed:'same'});
+        assert.equal(rejected,null,'invalid executable rules remain rejected');
         assert.ok(first && second);
         assert.equal(first.rules.entry.op,'gt');
         assert.equal(second.rules.entry.op,'lt');
@@ -123,7 +126,9 @@ test('AI response passes real HTTP/JSON/spec/evaluation boundaries without model
     `;
     const result = await run(['-e', script], { SOVEREIGN_ROUTER_URL: `http://127.0.0.1:${server.address().port}/v1` });
     assert.equal(result.code, 0, result.output);
-    assert.equal(requests, 4);
+    assert.equal(requests, 5);
+    assert.match(result.output, /"reason":"timeframe_mismatch"/);
+    assert.match(result.output, /"reason":"spec_rejected"/);
     assert.match(prompt, /executable structured rules/);
     assert.match(prompt, /timeframe.*1d/i);
     console.log(result.output.trim());

@@ -597,11 +597,19 @@ function generateCandidateSpec(options = {}) {
 }
 
 async function generateAiCandidateSpec(options = {}) {
+  const started = Date.now();
   try {
     const aiResult = await synthesizeStrategyWithAi(options);
     if (!aiResult) return null;
     validateRules(aiResult.rules);
-    if (options.timeframe && aiResult.timeframe !== options.timeframe) return null;
+    if (options.timeframe && aiResult.timeframe !== options.timeframe) {
+      console.error('[AI-FAILURE] ' + JSON.stringify({
+        stage: 'strategy_spec',
+        reason: 'timeframe_mismatch',
+        elapsed_ms: Date.now() - started,
+      }));
+      return null;
+    }
 
     const baseFamily = options.family || (CANONICAL_STRATEGY_FAMILIES.includes(aiResult.family)
       ? aiResult.family
@@ -680,6 +688,11 @@ async function generateAiCandidateSpec(options = {}) {
     spec.checksum = computeSpecChecksum(spec);
     return spec;
   } catch {
+    console.error('[AI-FAILURE] ' + JSON.stringify({
+      stage: 'strategy_spec',
+      reason: 'spec_rejected',
+      elapsed_ms: Date.now() - started,
+    }));
     return null;
   }
 }

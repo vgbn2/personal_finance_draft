@@ -1,6 +1,105 @@
 # GitHub-image test CT
 
+## Nov24 matching-rule image publication
+
+[GitHub run45220188546](https://github.com/vgbn2/personal_finance_draft/actions/runs/45220188546)
+completed successfully for revision `cdc879d211eaeab2ec3b23b15d6c36f3a38fc1bc`,
+source tree `9fd82bec8676ba21c23253bfd532fcc29d5473dd`. Both image smoke paths
+passed; the all-in-one executable-rule gate passed14/14 in the actual container.
+Published all-in-one digest:
+`sha256:4f270b23ef0e0b30983a3c6ae9712f96e4027dff9deecdb2c18e81128e3eb71e`.
+The publication step produced this digest; the test-load image digest is distinct.
+Deployment and scheduled-cycle proof are separate gates, not implied by publication.
+
 ## Scope and identity
+
+### AI failure diagnosis and source-only remediation, Nov24
+
+CT104 remains on revision `1db5a0b0`: the replacement stopped at a backup
+ownership mismatch (1000:1000 became0:0), before original-container replacement.
+The original identity and full inventory were recovered and verified. Do not
+use the simple Compose recreation command below while preservation is unresolved.
+
+Repeated scheduled failures lasted about45seconds. This matches the configured
+timeout but does not prove timeout causality: the deployed client collapses
+transport, provider, empty-content and parse failures into null. Like several
+alarms wired to one lamp, the final assertion loses the failing boundary.
+
+Current **unpublished/local source**, not deployed proof, adds `[AI-FAILURE]` stderr
+JSON with stage, fixed reason, elapsed_ms and optional HTTP status. It excludes
+credentials, URLs, prompts, response bodies and exception messages. Strategy
+synthesis uses only the configured router model; general chat retains its existing
+Ollama fallback. JSON must be a complete object (optionally Markdown fenced), not
+an array or prose containing an extracted object. Spec validation/timeframe rejection
+also emits metadata while retaining the null/failure contract. No deadline or
+quality gate was relaxed. These changes improve diagnosis, not provider reliability.
+
+The existing GitHub All-in-One container gate now includes
+`tests/scripts/strategy/ai_client_diagnostics.test.js` in local workflow source.
+Continuation checks: focused27/27; read-only `node:24-bookworm-slim` container with
+`--network none`13/13; image contract2/2. These are actual local checks, not a new
+GitHub run, matching production image build, or whole-agent-isolation proof.
+
+### Stopped-target archive finding (local qualification only)
+
+Issue#113 continuation found a simpler alternative to a running maintenance
+target: a numeric-owner tar exported from a stopped source, piped to plain
+`docker cp - TARGET:/existing-parent/` **without `-a`**, retained12fixture entries
+including3symlinks in a never-started local target. The direct API request with
+`copyUIDGID=true` failed ownership equality. Both attempts and cleanup evidence
+remain under `/tmp/opencode/runtime-goal/stopped-restore-review/`.
+
+This is an observed transport difference, not a controlled single-parameter
+causality proof: API path details also differed. Do not generalize the flag to
+host-file copying or silently replace the existing rollout command. The previous
+host-extracted snapshot path is not what passed. CT104 daemon/path qualification,
+complete archive-header inventory validation and rollback proof remain separate
+gates. No blanket chown, expected-owner changes or original-backup overwrite.
+
+The subsequent **one-attempt CT104 transport qualification passed** on Docker
+29.10.0 in its mapped LXC environment, using the original image and a fresh
+synthetic `/app/issue113-fixture-…/` parent. All12entries/3symlinks matched,
+source unchanged, target never started, both owned containers removed. Evidence:
+`/tmp/opencode/runtime-goal/ct104-stopped-restore/REPORT.md`. This closes only
+daemon/fresh-parent transport compatibility, not merging existing application
+trees, complete-state recovery or integration into the rollout/rollback script.
+
+#### 1. Inspection / Probe
+
+Inspect container revision and the service journal before attributing any new
+diagnostic event to a deployed fix. Existing old-image journal failures remain
+evidence; a missing router journal record does not establish nonreceipt.
+
+#### 2. Remediation / Action
+
+Publish a matching reviewed immutable image only through the approved workflow;
+deploy only after stopped-container backup/restore full metadata equality is
+proved. Do not hot-patch the running container or recreate it without preserved
+state. Global router observability remains unchanged: installed source has both
+metadata-only and payload-capable implementations, with active reachability unresolved.
+
+#### 3. Verification / Proof
+
+```bash
+node --test tests/scripts/strategy/ai_client_diagnostics.test.js tests/scripts/strategy/strategy_rules_boundaries.test.js # real loopback HTTP, parsers and spec boundary; no provider calls
+```
+
+Require actual scheduled deployed events after matching-image verification.
+An `[AI-FAILURE]` timeout event proves the local client deadline expired, not the
+provider's underlying reason. HTTP status proves only the observed response.
+Successful generation still requires genuine data, validated rules, checksums and
+unchanged gates; no stage/promotion/order call is introduced. Source tests do not
+qualify deployed behavior or profitable strategies.
+
+#### 4. Rollback / Emergency Exit
+
+No runtime change occurred in this remediation pass. Retain the original container,
+failed snapshots and diagnostic attempts. Any future rollout must use the existing
+identity-checked rollback only after its snapshot path is independently verified;
+it must not reuse a known-failing ownership gate as an assumed recovery guarantee.
+
+Runner-linked observations, failed attempts and real stream evidence are under
+`/tmp/opencode/runtime-goal/`; the task ledger remains the dated Nov22 handoff.
 
 The isolated test is CT104 (`sv-github-test`) on `delloptiplex`, IPv4
 `192.168.4.140/24`, with 4 vCPU, 6144 MiB RAM and a 40 GiB disk. It is an
