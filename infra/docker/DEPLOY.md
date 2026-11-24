@@ -1,6 +1,20 @@
 # Deploy — Sovereign Trading Platform
 
 ## Prerequisites on the host (Proxmox LXC, VM, or Bare-Metal)
+
+### Quant credentials and search boundary (Nov24 continuation)
+
+The optional quant profile accepts an operator-supplied `SOVEREIGN_ROUTER_KEY`.
+Without it, the quant container's first shell statement exits before research/AI
+dispatch; unrelated profiles can still render without that credential. There is
+no embedded key fallback. Rendering Compose alone does not prove quant startup or
+provider authentication.
+
+The selected SearXNG policy is internal container access plus loopback/SSH tunnel
+for operators. The existing `sv-searxng` deployment owner is not declared in these
+tracked Compose files; do not invent another service, relax the limiter, or claim
+its broad host publication has already been changed. Locate its actual deployment
+definition and consumers before applying the selected boundary.
 - **OS-Agnostic Docker Runtime**: Any modern Linux distribution (Debian, Alpine, Ubuntu, Arch, Fedora, Rocky) or Proxmox LXC container (with `nesting=1,keyctl=1`). **Ubuntu is NOT a requirement**.
 - **Docker 24+** and Docker Compose plugin (v2+)
 - **Hardware Sizing**:
