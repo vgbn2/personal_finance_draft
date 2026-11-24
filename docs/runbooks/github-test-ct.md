@@ -216,6 +216,20 @@ neither proves long-term soak, promotion or profitable trading.
 
 ## Research-only periodic discovery in CT104
 
+### Nov24 rollout continuation (source, not deployed)
+
+Commit `932f498c` publishes safe AI failure categories and strategy-model identity
+checks. GitHub image run `45350443026` is the matching publication attempt; its
+launch is not evidence of a published digest or running revision.
+`tools/operational/ct104_image_upgrade.sh` retains stopped numeric tar archives
+without host extraction and keeps the original container for identity-checked
+rollback. Its local Docker fixture proves ordinary files/directories only.
+Links, unsupported tar headers, nonempty replacement state, or any full-config
+divergence fail closed. Target preflight and rollback qualification are separate;
+do not run it against CT114 or invoke it with `sh`.
+Never replace preserved state, change ownership wholesale, or overwrite a failed
+backup to force a rollout through its inventory gate.
+
 The host-managed `sv-test-discovery.timer` invokes a oneshot service five seconds
 after activation, then 90 seconds after each completed invocation. Systemd does
 not overlap activations of this same service. Each invocation uses the published

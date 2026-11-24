@@ -494,6 +494,26 @@
           "profiles": ["developer"],
           "allowed_surfaces": ["process_internal"]
         },
+        {
+          "name": "CT104_FIXTURE_IMAGE",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
+        {
+          "name": "CT104_HELPER",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
+        {
+          "name": "DOCKER_CONTEXT",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
+        {
+          "name": "DOCKER_HOST",
+          "profiles": ["developer"],
+          "allowed_surfaces": ["process_internal"]
+        },
         {"name": "APPDATA"},
         {"name": "CI"},
         {"name": "DISABLE_HMR"},
